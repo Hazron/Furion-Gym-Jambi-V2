@@ -21,7 +21,8 @@ class order extends Model
         'discount',
         'total_payment',
         'payment_method',
-        'payment_status', //paid
+        'payment_status',
+        'bukti_transfer'
     ];
 
     // Relasi ke OrderItem (1 order punya banyak item)

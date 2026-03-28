@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\order_item;
+// HAPUS: use App\Models\order_item; (Tidak diperlukan karena satu folder/namespace)
 
 class Produk extends Model
 {
@@ -19,11 +19,8 @@ class Produk extends Model
         'status_produk',
     ];
 
-    // Relasi ke item transaksi
     public function orderItems()
     {
-        return $this->hasMany(order_item::class, 'produk_id', 'id_produk');
+        return $this->hasMany(OrderItem::class, 'produk_id', 'id_produk');
     }
-
-    
-}   
+}

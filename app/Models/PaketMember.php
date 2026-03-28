@@ -14,10 +14,9 @@ class PaketMember extends Model
 
     protected $fillable = [
         'nama_paket',
-        'jenis',            
+        'jenis',            // Cukup tulis satu kali saja
         'durasi',           
         'harga',
-        'jenis',
         'status',           
         'campaign_id',           
         'deskripsi'
@@ -49,7 +48,8 @@ class PaketMember extends Model
         return $query->where('jenis', 'promo');
     }
     
-    public function scopePromoCouple($query){
+    public function scopePromoCouple($query)
+    {
         return $query->where('jenis', 'promo couple');
     }
 }

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class members extends Model
+class Members extends Model
 {
     protected $primaryKey = 'id_members';
     public $incrementing = false;
@@ -39,12 +39,15 @@ class members extends Model
 
     public function promo()
     {
-        return $this->belongsTo(paket_promo::class, 'promo_id', 'id_paket_promo');
+        // PERBAIKAN: Pastikan nama class Model-nya sesuai. 
+        // Idealnya di Laravel menggunakan PascalCase (PaketPromo).
+        // Jika nama file fisikmu paket_promo.php, ubah menjadi PaketPromo.php
+        return $this->belongsTo(PaketPromo::class, 'promo_id', 'id_paket_promo'); 
     }
 
     public function partner()
     {
-        return $this->hasOne(members::class, 'id_members', 'partner_id');
+        return $this->hasOne(Members::class, 'id_members', 'partner_id');
     }
 
     public function getNamaPaketAktifAttribute()
@@ -59,6 +62,6 @@ class members extends Model
 
     public function membershipPayments()
     {
-        return $this->hasMany(membershipPayment::class, 'member_id', 'id_members');
+        return $this->hasMany(MembershipPayment::class, 'member_id', 'id_members');
     }
 }

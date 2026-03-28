@@ -4,19 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class absen extends Model
+// PERBAIKAN 1: Nama class diawali huruf kapital (Absen)
+class Absen extends Model 
 {
     protected $table = 'absen';
-    protected $primaryKey = 'id_absen'; // Sesuaikan dengan schema Anda
+    protected $primaryKey = 'id_absen'; 
 
     protected $fillable = [
         'member_id',
         'waktu_masuk',
     ];
 
-    // Relasi ke Member (opsional, jika nanti butuh nama member)
     public function member()
     {
-        return $this->belongsTo(members::class, 'member_id', 'id_members');
+        return $this->belongsTo(Members::class, 'member_id', 'id_members');
     }
 }

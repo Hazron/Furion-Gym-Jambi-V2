@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PaketMember;
-use App\Models\members;
+use App\Models\Members;
 use App\Models\MembershipPayment;
 use App\Models\paket_promo;
 use Illuminate\Support\Str;
@@ -17,17 +17,16 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class memberAdminController extends Controller
+class MemberAdminController extends Controller
 {
     public function memberAdmin()
     {
         $paketReguler = PaketMember::where('status', 'aktif')->where('jenis', 'reguler')->get();
         $paketCouple = PaketMember::where('status', 'aktif')->where('jenis', 'couple')->get();
         $paketPromo = PaketMember::where('status', 'aktif')->where('jenis', 'promo')->get();
-
         $paketPromoCouple = PaketMember::where('status', 'aktif')->where('jenis', 'promo couple')->get();
 
-        $members = members::orderBy('updated_at', 'desc')->get();
+        $members = Members::orderBy('updated_at', 'desc')->get();
 
         return view('Admin.Member', compact(
             'paketReguler',
@@ -50,10 +49,10 @@ class memberAdminController extends Controller
                 'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
                 'tanggal_mulai' => 'required|date',
                 'id_paket' => 'required',
-                'bukti_pembayaran' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
+                // Validasi form baru
+                'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
             ]);
 
-            // Cek kondisi skip_invoice & password owner
             $skipInvoice = $request->has('skip_invoice');
             if ($skipInvoice) {
                 $ownerPassword = env('OWNER_PASSWORD', 'admin123');
@@ -68,7 +67,6 @@ class memberAdminController extends Controller
             $durasiString = $paket->durasi;
             $savePaketId = $paket->id_paket;
 
-            // LOGIKA DETEKSI COUPLE (Membaca jenis 'couple', 'promo couple', atau dari nama paket)
             $isCouple = (in_array($paket->jenis, ['couple', 'promo couple']) || stripos($namaPaket, 'couple') !== false);
 
             $tanggalMulai = Carbon::parse($request->tanggal_mulai);
@@ -89,13 +87,13 @@ class memberAdminController extends Controller
             $generateId = function () {
                 do {
                     $id = 'FRN-' . mt_rand(100000, 999999);
-                } while (members::where('id_members', $id)->exists());
+                } while (Members::where('id_members', $id)->exists());
                 return $id;
             };
 
             // 1. SIMPAN MEMBER UTAMA
             $idMember1 = $generateId();
-            $member1 = members::create([
+            $member1 = Members::create([
                 'id_members' => $idMember1,
                 'nama_lengkap' => $request->nama_member,
                 'alamat' => '-',
@@ -112,9 +110,8 @@ class memberAdminController extends Controller
             $namaPartnerStr = '';
             if ($isCouple) {
                 if ($request->filled('partner_id')) {
-                    $partner = members::findOrFail($request->partner_id);
+                    $partner = Members::findOrFail($request->partner_id);
 
-                    // Update data partner
                     $partner->update([
                         'paket_id' => $savePaketId,
                         'tanggal_selesai' => $tanggalSelesai,
@@ -132,7 +129,7 @@ class memberAdminController extends Controller
                         $idMember2 = $generateId();
                     }
 
-                    $member2 = members::create([
+                    $member2 = Members::create([
                         'id_members' => $idMember2,
                         'nama_lengkap' => $request->nama_member_2,
                         'alamat' => '-',
@@ -155,13 +152,12 @@ class memberAdminController extends Controller
                 }
             }
 
-            // 3. INVOICE & PAYMENT RECORD (SELALU DIJALANKAN, TAPI DIBEDAKAN JIKA BYPASS)
+            // 3. UPLOAD BUKTI TRANSFER & INVOICE
             $buktiPath = null;
-            if ($request->hasFile('bukti_pembayaran') && !$skipInvoice) {
-                $buktiPath = $request->file('bukti_pembayaran')->store('bukti_pembayaran', 'public');
+            if ($request->hasFile('bukti_transfer') && !$skipInvoice) {
+                $buktiPath = $request->file('bukti_transfer')->store('bukti_transfer', 'public');
             }
 
-            // Bedakan nomor invoice untuk bypass
             $prefixInvoice = $skipInvoice ? 'BYP/FRN/' : 'INV/FRN/';
             $nomorInvoice = $prefixInvoice . now()->format('dmY') . '/' . strtoupper(Str::random(4));
 
@@ -170,7 +166,6 @@ class memberAdminController extends Controller
                 $keterangan .= $namaPartnerStr;
             }
 
-            // Set Data Berdasarkan Bypass atau Tidak
             if ($skipInvoice) {
                 $metodePembayaran = 'bypass';
                 $nominalBayar = 0;
@@ -192,9 +187,9 @@ class memberAdminController extends Controller
                 'status_pembayaran' => 'completed',
                 'admin_id' => Auth::id() ?? 1,
                 'keterangan' => $keterangan,
+                'bukti_transfer' => $buktiPath, // Simpan path gambar ke DB
             ]);
 
-            // HANYA KIRIM WA JIKA TIDAK SKIP INVOICE
             if (!$skipInvoice) {
                 try {
                     $this->kirimInvoiceTextWA($member1, $payment, $namaPaket, $tanggalSelesai);
@@ -255,9 +250,13 @@ class memberAdminController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $data = members::with(['paket', 'promo', 'membershipPayments' => function($q) {
+            $data = Members::with([
+                'paket',
+                'promo',
+                'membershipPayments' => function ($q) {
                     $q->orderBy('created_at', 'desc');
-                }])
+                }
+            ])
                 ->select('members.*')
                 ->latest('updated_at');
 
@@ -278,11 +277,9 @@ class memberAdminController extends Controller
                     </div>';
                 })
                 ->addColumn('paket_members', function ($row) {
-                    // Cek apakah pembayaran terakhirnya adalah bypass
                     $latestPayment = $row->membershipPayments->first();
                     $isBypass = $latestPayment && strtolower($latestPayment->metode_pembayaran) == 'bypass';
-                    
-                    // Buat label merah jika iya
+
                     $bypassBadge = $isBypass ? '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-red-100 text-red-600 border border-red-200">BYPASS</span>' : '';
 
                     if ($row->paket)
@@ -358,7 +355,7 @@ class memberAdminController extends Controller
     public function deleteMember($id)
     {
         try {
-            $member = members::findOrFail($id);
+            $member = Members::findOrFail($id);
             $member->delete();
             return redirect()->back()->with('success', 'Member berhasil dihapus.');
         } catch (\Exception $e) {
@@ -376,7 +373,7 @@ class memberAdminController extends Controller
                 'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
             ]);
 
-            $member = members::findOrFail($id);
+            $member = Members::findOrFail($id);
             $member->update([
                 'nama_lengkap' => $validated['nama_member'],
                 'no_telepon' => $validated['nomor_telepon'],
@@ -396,10 +393,10 @@ class memberAdminController extends Controller
         try {
             $request->validate([
                 'id_paket' => 'required|exists:paket_members,id_paket',
-                'bukti_pembayaran' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
+                // Validasi upload bukti_transfer perpanjangan
+                'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
             ]);
 
-            // Cek kondisi skip_invoice & password owner
             $skipInvoice = $request->has('skip_invoice');
             if ($skipInvoice) {
                 $ownerPassword = env('OWNER_PASSWORD', 'admin123');
@@ -409,7 +406,7 @@ class memberAdminController extends Controller
             }
 
             $paket = PaketMember::findOrFail($request->id_paket);
-            $member = members::findOrFail($id);
+            $member = Members::findOrFail($id);
 
             $isCouple = (in_array($paket->jenis, ['couple', 'promo couple']) || stripos($paket->nama_paket, 'couple') !== false);
 
@@ -461,7 +458,7 @@ class memberAdminController extends Controller
             // UPDATE PARTNER (JIKA COUPLE)
             $namaPartner = '';
             if ($isCouple && $request->filled('partner_id')) {
-                $partner = members::findOrFail($request->partner_id);
+                $partner = Members::findOrFail($request->partner_id);
                 $tanggalSelesaiBaruPartner = $hitungTanggalBaru($partner->tanggal_selesai, $paket->durasi);
 
                 $partner->update([
@@ -474,15 +471,15 @@ class memberAdminController extends Controller
                 $namaPartner = ' & ' . $partner->nama_lengkap;
             }
 
-            // INVOICE RECORD TETAP DIBUAT UNTUK JEJAK BYPASS
+            // UPLOAD BUKTI TRANSFER
             $buktiPath = null;
-            if ($request->hasFile('bukti_pembayaran') && !$skipInvoice) {
-                $buktiPath = $request->file('bukti_pembayaran')->store('bukti_pembayaran', 'public');
+            if ($request->hasFile('bukti_transfer') && !$skipInvoice) {
+                $buktiPath = $request->file('bukti_transfer')->store('bukti_transfer', 'public');
             }
 
             $prefixInvoice = $skipInvoice ? 'BYP-REN-' : 'INV-REN-';
             $nomorInvoice = $prefixInvoice . strtoupper(Str::random(6)) . '-' . now()->format('dmYHis');
-            
+
             $keterangan = 'Perpanjang: ' . $paket->nama_paket . $namaPartner;
 
             if ($skipInvoice) {
@@ -506,9 +503,9 @@ class memberAdminController extends Controller
                 'status_pembayaran' => 'completed',
                 'admin_id' => Auth::id() ?? 1,
                 'keterangan' => $keterangan,
+                'bukti_transfer' => $buktiPath, // Simpan path gambar ke DB
             ]);
 
-            // HANYA KIRIM WA JIKA TIDAK SKIP INVOICE
             if (!$skipInvoice) {
                 try {
                     $target = preg_replace('/[^0-9]/', '', $member->no_telepon);
@@ -571,10 +568,10 @@ class memberAdminController extends Controller
         try {
             $request->validate([
                 'paket_id' => 'required|exists:paket_members,id_paket',
-                'bukti_pembayaran' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
+                // Validasi upload bukti_transfer reaktivasi
+                'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
             ]);
 
-            // Cek kondisi skip_invoice & password owner
             $skipInvoice = $request->has('skip_invoice');
             if ($skipInvoice) {
                 $ownerPassword = env('OWNER_PASSWORD', 'admin123');
@@ -584,7 +581,7 @@ class memberAdminController extends Controller
             }
 
             $paket = PaketMember::findOrFail($request->paket_id);
-            $member = members::findOrFail($id);
+            $member = Members::findOrFail($id);
 
             $isCouple = (in_array($paket->jenis, ['couple', 'promo couple']) || stripos($paket->nama_paket, 'couple') !== false);
 
@@ -618,7 +615,7 @@ class memberAdminController extends Controller
                     throw new \Exception('Pasangan tidak boleh diri sendiri.');
                 }
 
-                $partner = members::findOrFail($request->partner_id);
+                $partner = Members::findOrFail($request->partner_id);
                 $partner->update([
                     'paket_id' => $paket->id_paket,
                     'tanggal_selesai' => $tanggalSelesai,
@@ -630,15 +627,15 @@ class memberAdminController extends Controller
                 $namaPartner = ' & ' . $partner->nama_lengkap;
             }
 
-            // INVOICE RECORD TETAP DIBUAT UNTUK JEJAK BYPASS
+            // UPLOAD BUKTI TRANSFER
             $buktiPath = null;
-            if ($request->hasFile('bukti_pembayaran') && !$skipInvoice) {
-                $buktiPath = $request->file('bukti_pembayaran')->store('bukti_pembayaran', 'public');
+            if ($request->hasFile('bukti_transfer') && !$skipInvoice) {
+                $buktiPath = $request->file('bukti_transfer')->store('bukti_transfer', 'public');
             }
 
             $prefixInvoice = $skipInvoice ? 'BYP-RCT-' : 'INV-RCT-';
             $nomorInvoice = $prefixInvoice . strtoupper(Str::random(6)) . '-' . now()->format('dmYHis');
-            
+
             $keterangan = 'Re-aktifasi: ' . $paket->nama_paket . $namaPartner;
 
             if ($skipInvoice) {
@@ -662,9 +659,9 @@ class memberAdminController extends Controller
                 'status_pembayaran' => 'completed',
                 'admin_id' => Auth::id() ?? 1,
                 'keterangan' => $keterangan,
+                'bukti_transfer' => $buktiPath, // Simpan path gambar ke DB
             ]);
 
-            // KIRIM NOTIFIKASI WA RE-AKTIVASI (HANYA JIKA TIDAK SKIP INVOICE)
             if (!$skipInvoice) {
                 try {
                     $target = preg_replace('/[^0-9]/', '', $member->no_telepon);

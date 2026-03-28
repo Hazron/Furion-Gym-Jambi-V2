@@ -21,9 +21,7 @@ class DashboardAdminController extends Controller
         $activeMembers   = Members::where('status', 'active')->count();
         $inactiveMembers = Members::where('status', 'inactive')->count();
 
-        // Dummy variable untuk single value (bukan chart), akan diupdate di bawah
         $todayVisits     = 0;
-
         // ================================================================
         // 2. DATA CHART (MEMBER & REVENUE)
         // ================================================================
@@ -66,7 +64,7 @@ class DashboardAdminController extends Controller
         // 1. Chart Data: 7 Hari Terakhir
         $chart7Days = [
             'labels'  => [],
-            'members' => [],
+            'Members' => [],
             'revenue' => [],
             'visits'  => [] // Kita siapkan slot kosong
         ];
@@ -76,7 +74,7 @@ class DashboardAdminController extends Controller
             $dayLabel = Carbon::now()->subDays($i)->isoFormat('ddd'); // Sen, Sel
 
             $chart7Days['labels'][]  = $dayLabel;
-            $chart7Days['members'][] = $rawMember30[$date] ?? 0;
+            $chart7Days['Members'][] = $rawMember30[$date] ?? 0;
 
             $revOrder = $rawOrder30[$date] ?? 0;
             $revMemb  = $rawMemberPay30[$date] ?? 0;
@@ -86,7 +84,7 @@ class DashboardAdminController extends Controller
         // 2. Chart Data: 30 Hari Terakhir
         $chart30Days = [
             'labels'  => [],
-            'members' => [],
+            'Members' => [],
             'revenue' => [],
             'visits'  => []
         ];
@@ -96,7 +94,7 @@ class DashboardAdminController extends Controller
             $label = Carbon::now()->subDays($i)->format('d M');
 
             $chart30Days['labels'][]  = $label;
-            $chart30Days['members'][] = $rawMember30[$date] ?? 0;
+            $chart30Days['Members'][] = $rawMember30[$date] ?? 0;
 
             $revOrder = $rawOrder30[$date] ?? 0;
             $revMemb  = $rawMemberPay30[$date] ?? 0;
@@ -107,7 +105,7 @@ class DashboardAdminController extends Controller
         $chartToday = [
             'labels'  => [],
             'revenue' => [],
-            'members' => [], // Kosongkan saja untuk per jam
+            'Members' => [], // Kosongkan saja untuk per jam
             'visits'  => []
         ];
 
@@ -208,9 +206,6 @@ class DashboardAdminController extends Controller
         $rataRata = $hariBerjalan > 0 ? round($totalVisitBulanIni / $hariBerjalan, 1) : 0;
 
         // --- PENGISIAN DATA CHART VISIT (INJECT KE ARRAY YANG SUDAH ADA) ---
-
-        // A. Visit Hari Ini (Per Jam) -> Masuk ke $chartToday['visits']
-        // Kita loop lagi 07:00 - 22:00, tapi kali ini khusus hitung visit
         $visitTodayData = [];
         for ($i = 7; $i <= 22; $i++) {
             $visitTodayData[] = Absen::whereDate('waktu_masuk', Carbon::today())

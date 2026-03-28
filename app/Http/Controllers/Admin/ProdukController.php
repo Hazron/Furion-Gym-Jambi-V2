@@ -31,6 +31,8 @@ class ProdukController extends Controller
             'total_amount' => 'required|numeric',
             'payment_status' => 'required|string',
             'payment_method' => 'required|string|in:cash,qris,transfer',
+            // Tambahkan validasi file
+            'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048', 
         ]);
 
         DB::beginTransaction();
@@ -38,8 +40,15 @@ class ProdukController extends Controller
         try {
             $invoiceCode = 'INV-' . date('YmdHis') . '-' . rand(100, 999);
 
+            // 2. Upload Bukti Transfer jika ada
+            $buktiPath = null;
+            if ($request->hasFile('bukti_transfer')) {
+                $buktiPath = $request->file('bukti_transfer')->store('bukti_transfer_produk', 'public');
+            }
+
+            // 3. Buat Data Order
             $order = order::create([
-                'member_id'      => $request->member_id, // Bisa null jika Guest
+                'member_id'      => $request->member_id ?: null, // Bisa null jika Guest
                 'kasir_id'       => Auth::id(), // ID Admin yang login
                 'invoice_code'   => $invoiceCode,
                 'subtotal'       => $request->total_amount, // Sementara sama dengan total
@@ -47,6 +56,7 @@ class ProdukController extends Controller
                 'total_payment'  => $request->total_amount,
                 'payment_method' => $request->payment_method,
                 'payment_status' => $request->payment_status,
+                'bukti_transfer' => $buktiPath, // Simpan ke database
             ]);
 
             // 4. Loop Items Keranjang
@@ -59,13 +69,14 @@ class ProdukController extends Controller
                     throw new \Exception("Stok {$produk->nama_produk} tidak mencukupi.");
                 }
                 order_item::create([
-                    'order_id'   => $order->order_id,
+                    'order_id'   => $order->order_id ?? $order->id, // Sesuaikan dengan PK orders
                     'produk_id' => $produk->id_produk,
                     'qty'        => $item['qty'],
                     'price'      => $produk->harga_produk, // Pakai harga dari DB biar aman
                     'total'      => $produk->harga_produk * $item['qty'],
                 ]);
 
+                // 5. Kurangi Stok
                 $produk->stok_produk -= $item['qty'];
                 $produk->save();
             }
@@ -87,7 +98,6 @@ class ProdukController extends Controller
             ], 500);
         }
     }
-
     public function tambahProduk(Request $request)
     {
         // Validasi

@@ -167,6 +167,17 @@ document.addEventListener('DOMContentLoaded', function() {
     /* -------------------------------------------------------------------------- */
     /* 4. PAYMENT LOGIC                                                           */
     /* -------------------------------------------------------------------------- */
+        window.toggleBuktiTransfer = function(method) {
+        const container = document.getElementById('swal-bukti-transfer-container');
+        
+        if (method === 'transfer' || method === 'qris') {
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+            document.getElementById('swal-bukti-transfer').value = '';
+        }
+    }
+
     window.processPayment = function() {
         if (cart.length === 0) {
             Swal.fire({
@@ -209,12 +220,18 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="text-left">
                 <label class="text-xs font-bold text-gray-500 uppercase">Metode Pembayaran</label>
-                <select id="swal-payment-method" class="w-full mt-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <select id="swal-payment-method" onchange="toggleBuktiTransfer(this.value)" class="w-full mt-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="cash">Tunai (Cash)</option>
                     <option value="qris">QRIS / E-Wallet</option>
                     <option value="transfer">Transfer Bank</option>
                 </select>
             </div>
+
+            <div id="swal-bukti-transfer-container" class="text-left mt-3 hidden bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <label class="text-xs font-bold text-blue-700 uppercase">Upload Bukti Transfer</label>
+                <input type="file" id="swal-bukti-transfer" accept="image/*,.pdf" class="w-full mt-1 text-sm bg-white border border-blue-200 rounded text-gray-600 p-1.5 focus:outline-none">
+            </div>
+
             <div class="text-left mt-3">
                 <label class="text-xs font-bold text-gray-500 uppercase">Status Pembayaran</label>
                 <select id="swal-payment-status" class="w-full mt-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-green-600 bg-green-50">
@@ -230,19 +247,28 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmButtonColor: '#2563EB',
             allowOutsideClick: false,
             preConfirm: () => {
+                const method = document.getElementById('swal-payment-method').value;
+                const fileInput = document.getElementById('swal-bukti-transfer');
+                
+                if (method === 'transfer' && fileInput.files.length === 0) {
+                    Swal.showValidationMessage('Bukti transfer wajib diupload!');
+                    return false;
+                }
+
                 return {
-                    method: document.getElementById('swal-payment-method').value,
-                    status: document.getElementById('swal-payment-status').value
+                    method: method,
+                    status: document.getElementById('swal-payment-status').value,
+                    buktiFile: fileInput.files[0]
                 }
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                submitOrderToController(memberName, grandTotal, result.value.method, result.value.status);
+                submitOrderToController(memberName, grandTotal, result.value.method, result.value.status, result.value.buktiFile);
             }
         });
     }
 
-    function submitOrderToController(memberName, totalAmount, paymentMethod, paymentStatus) {
+    function submitOrderToController(memberName, totalAmount, paymentMethod, paymentStatus, buktiFile) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         if (!csrfToken) {
             Swal.fire('Error', 'CSRF token tidak ditemukan.', 'error');
@@ -256,22 +282,30 @@ document.addEventListener('DOMContentLoaded', function() {
             didOpen: () => Swal.showLoading()
         });
 
-        const payload = {
-            member_id: selectedMemberId,
-            total_amount: totalAmount,
-            payment_method: paymentMethod,
-            payment_status: paymentStatus,
-            items: cart,
-            _token: csrfToken.getAttribute('content')
-        };
+        const formData = new FormData();
+        formData.append('member_id', selectedMemberId || '');
+        formData.append('total_amount', totalAmount);
+        formData.append('payment_method', paymentMethod);
+        formData.append('payment_status', paymentStatus);
+        
+        // Loop untuk memasukkan array items keranjang ke dalam FormData
+        cart.forEach((item, index) => {
+            formData.append(`items[${index}][id]`, item.id);
+            formData.append(`items[${index}][qty]`, item.qty);
+        });
+
+        // Masukkan file bukti transfer jika ada
+        if (buktiFile) {
+            formData.append('bukti_transfer', buktiFile);
+        }
 
         fetch(window.routes.simpanTransaksi, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken.getAttribute('content')
+                    // Catatan: Jangan tambahkan 'Content-Type': 'application/json' jika pakai FormData
                 },
-                body: JSON.stringify(payload)
+                body: formData
             })
             .then(response => {
                 if (!response.ok) return response.text().then(text => { throw new Error(text) });

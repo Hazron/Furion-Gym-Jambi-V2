@@ -288,7 +288,7 @@
                     <div class="mb-4">
                         <label class="block text-xs font-semibold text-gray-600 mb-1.5">Upload Bukti Transfer
                             (Opsional)</label>
-                        <input type="file" name="bukti_pembayaran"
+                        <input type="file" name="bukti_transfer"
                             class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-200 rounded-xl">
                     </div>
 
@@ -515,7 +515,7 @@
                     <div class="mb-4">
                         <label class="block text-xs font-semibold text-gray-600 mb-1.5">Upload Bukti Transfer
                             (Opsional)</label>
-                        <input type="file" name="bukti_pembayaran"
+                        <input type="file" name="bukti_transfer"
                             class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 border border-gray-200 rounded-xl">
                     </div>
 
@@ -663,7 +663,7 @@
                     <div class="mb-4">
                         <label class="block text-xs font-semibold text-gray-600 mb-1.5">Upload Bukti Transfer
                             (Opsional)</label>
-                        <input type="file" name="bukti_pembayaran"
+                        <input type="file" name="bukti_transfer"
                             class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 border border-gray-200 rounded-xl">
                     </div>
 
