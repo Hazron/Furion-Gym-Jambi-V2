@@ -11,7 +11,7 @@ class PaketMemberFurionController extends Controller
     public function index()
     {
         $pakets = PaketMember::orderBy('durasi', 'asc')->get();
-        return view('owner.paketmemberfurion', compact('pakets'));
+        return view('Owner.PaketMemberFurion', compact('pakets'));
     }
 
     public function store(Request $request)

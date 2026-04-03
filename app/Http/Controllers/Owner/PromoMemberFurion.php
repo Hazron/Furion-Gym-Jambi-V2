@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\members; // Pastikan huruf kapital jika modelnya Members
+use App\Models\Members;
 use App\Models\PaketMember;
 use App\Models\CampaignPromo;
-use App\Models\membershipPayment;
+use App\Models\MembershipPayment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +23,7 @@ class PromoMemberFurion extends Controller
         $tahun = $request->get('year', Carbon::now()->year);
         $statistikPromo = array_fill(1, 12, 0);
 
-        $transaksiPromo = membershipPayment::select(
+        $transaksiPromo = MembershipPayment::select(
             DB::raw('MONTH(tanggal_transaksi) as bulan'),
             DB::raw('COUNT(*) as total')
         )
@@ -61,17 +61,17 @@ class PromoMemberFurion extends Controller
             $idPaketArray = $promo->paketMembers->pluck('id_paket');
 
             // Hitung metrik performa
-            $promo->registrasi_count = membershipPayment::whereIn('paket_id', $idPaketArray)
+            $promo->registrasi_count = MembershipPayment::whereIn('paket_id', $idPaketArray)
                 ->where('jenis_transaksi', 'membership')
                 ->where('status_pembayaran', 'completed')
                 ->count();
 
-            $promo->perpanjang_count = membershipPayment::whereIn('paket_id', $idPaketArray)
+            $promo->perpanjang_count = MembershipPayment::whereIn('paket_id', $idPaketArray)
                 ->where('jenis_transaksi', 'renewal')
                 ->where('status_pembayaran', 'completed')
                 ->count();
 
-            $promo->reaktivasi_count = membershipPayment::whereIn('paket_id', $idPaketArray)
+            $promo->reaktivasi_count = MembershipPayment::whereIn('paket_id', $idPaketArray)
                 ->where('jenis_transaksi', 'reactivation')
                 ->where('status_pembayaran', 'completed')
                 ->count();
@@ -110,7 +110,7 @@ class PromoMemberFurion extends Controller
         $promoStats = $statistikPromo;
         $year = $tahun;
 
-        $members = members::all();
+        $members = Members::all();
         $totalOptOut = Members::where('is_opt_out', 1)->count();
 
         return view('Owner.PromoMemberFurion', compact('promos', 'promoStats', 'year', 'totalOptOut', 'members'));

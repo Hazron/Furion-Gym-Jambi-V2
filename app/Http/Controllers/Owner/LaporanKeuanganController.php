@@ -250,7 +250,7 @@ class LaporanKeuanganController extends Controller
 
         $laporanData = $membershipCollection->concat($penjualanCollection)->sortByDesc('tanggal_raw')->values();
 
-        return view('owner.laporankeuangan', [
+        return view('Owner.LaporanKeuangan', [
             'laporanData' => $laporanData,
             'totalPemasukan' => $totalMembership + $totalPenjualan,
             'totalMembership' => $totalMembership,

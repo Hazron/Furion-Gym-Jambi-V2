@@ -49,7 +49,6 @@ class MemberAdminController extends Controller
                 'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
                 'tanggal_mulai' => 'required|date',
                 'id_paket' => 'required',
-                // Validasi form baru
                 'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
             ]);
 
@@ -179,7 +178,7 @@ class MemberAdminController extends Controller
             $payment = MembershipPayment::create([
                 'member_id' => $member1->id_members,
                 'paket_id' => $savePaketId,
-                'jenis_transaksi' => 'membership',
+                'jenis_transaksi' => 'registrasi',
                 'nomor_invoice' => $nomorInvoice,
                 'tanggal_transaksi' => now(),
                 'metode_pembayaran' => $metodePembayaran,
@@ -187,7 +186,7 @@ class MemberAdminController extends Controller
                 'status_pembayaran' => 'completed',
                 'admin_id' => Auth::id() ?? 1,
                 'keterangan' => $keterangan,
-                'bukti_transfer' => $buktiPath, // Simpan path gambar ke DB
+                'bukti_transfer' => $buktiPath,
             ]);
 
             if (!$skipInvoice) {
@@ -208,34 +207,46 @@ class MemberAdminController extends Controller
             return redirect()->back()->with('error', 'Error Sistem: ' . $e->getMessage())->withInput();
         }
     }
-
+    
     private function kirimInvoiceTextWA($member, $payment, $namaPaket, $tglSelesai)
     {
         $no = preg_replace('/[^0-9]/', '', $member->no_telepon);
-        if (substr($no, 0, 2) == '08')
+        if (substr($no, 0, 2) == '08') {
             $no = '628' . substr($no, 2);
-
+        }
+    
         if (!empty($no) && substr($no, 0, 2) == '62') {
+    
+            $linkAbsen = "https://furiongymjambi.com/dashboard-member?member_id=" . $member->id_members;
+    
             $pesan =
                 "🧾 *INVOICE PEMBAYARAN* 🧾\n" .
                 "*FURION GYM JAMBI*\n" .
                 "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n" .
+    
                 "👤 *MEMBER INFO*\n" .
                 "Nama   : {$member->nama_lengkap}\n" .
                 "ID     : {$member->id_members}\n" .
                 "No. HP : {$member->no_telepon}\n\n" .
+    
                 "📦 *DETAIL PAKET*\n" .
                 "Paket   : {$namaPaket}\n" .
                 "Expired : " . $tglSelesai->format('d M Y') . "\n\n" .
+    
                 "💰 *PEMBAYARAN*\n" .
                 "No. Inv : {$payment->nomor_invoice}\n" .
                 "Tgl     : " . now()->format('d/m/Y H:i') . "\n" .
                 "*Total  : Rp " . number_format($payment->nominal, 0, ',', '.') . "*\n" .
                 "Status  : ✅ LUNAS\n\n" .
+    
+                "🔗 *ABSEN MEMBER*\n" .
+                "Member Furion bisa melihat Absen kehadirannya, berikut link untuk absen:\n" .
+                $linkAbsen . "\n\n" .
+    
                 "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n" .
                 "Pesan ini adalah bukti pembayaran yang sah.\n" .
                 "*Terima kasih & Selamat Latihan!* 💪🔥";
-
+    
             Http::withoutVerifying()
                 ->withHeaders(['Authorization' => env('FONNTE_TOKEN')])
                 ->post('https://api.fonnte.com/send', [
@@ -393,7 +404,6 @@ class MemberAdminController extends Controller
         try {
             $request->validate([
                 'id_paket' => 'required|exists:paket_members,id_paket',
-                // Validasi upload bukti_transfer perpanjangan
                 'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
             ]);
 
@@ -411,11 +421,11 @@ class MemberAdminController extends Controller
             $isCouple = (in_array($paket->jenis, ['couple', 'promo couple']) || stripos($paket->nama_paket, 'couple') !== false);
 
             if ($isCouple) {
-                $request->validate([
-                    'partner_id' => 'required|exists:members,id_members',
-                ], ['partner_id.required' => 'Wajib memilih Pasangan untuk paket Couple.']);
-
-                if ($request->partner_id == $member->id_members) {
+                if (!$request->filled('partner_id') && !$request->filled('nama_member_2')) {
+                    return redirect()->back()->with('error', 'Wajib memilih Pasangan terdaftar atau mengisi data Pasangan Baru untuk paket Couple.');
+                }
+                
+                if ($request->filled('partner_id') && $request->partner_id == $member->id_members) {
                     return redirect()->back()->with('error', 'Pasangan tidak boleh diri sendiri.');
                 }
             }
@@ -442,6 +452,13 @@ class MemberAdminController extends Controller
                 return $newDate;
             };
 
+            $generateId = function () {
+                do {
+                    $newId = 'FRN-' . mt_rand(100000, 999999);
+                } while (Members::where('id_members', $newId)->exists());
+                return $newId;
+            };
+
             // UPDATE MEMBER UTAMA
             $tanggalSelesaiBaruMember = $hitungTanggalBaru($member->tanggal_selesai, $paket->durasi);
             $updateDataMember = [
@@ -450,26 +467,45 @@ class MemberAdminController extends Controller
                 'status' => 'active',
             ];
 
-            if ($isCouple && $request->filled('partner_id')) {
-                $updateDataMember['partner_id'] = $request->partner_id;
-            }
-            $member->update($updateDataMember);
-
             // UPDATE PARTNER (JIKA COUPLE)
             $namaPartner = '';
-            if ($isCouple && $request->filled('partner_id')) {
-                $partner = Members::findOrFail($request->partner_id);
-                $tanggalSelesaiBaruPartner = $hitungTanggalBaru($partner->tanggal_selesai, $paket->durasi);
+            if ($isCouple) {
+                if ($request->filled('partner_id')) {
+                    $partner = Members::findOrFail($request->partner_id);
+                    $tanggalSelesaiBaruPartner = $hitungTanggalBaru($partner->tanggal_selesai, $paket->durasi);
 
-                $partner->update([
-                    'paket_id' => $paket->id_paket,
-                    'tanggal_selesai' => $tanggalSelesaiBaruPartner,
-                    'status' => 'active',
-                    'partner_id' => $member->id_members,
-                ]);
+                    $partner->update([
+                        'paket_id' => $paket->id_paket,
+                        'tanggal_selesai' => $tanggalSelesaiBaruPartner,
+                        'status' => 'active',
+                        'partner_id' => $member->id_members,
+                    ]);
 
-                $namaPartner = ' & ' . $partner->nama_lengkap;
+                    $updateDataMember['partner_id'] = $request->partner_id;
+                    $namaPartner = ' & ' . $partner->nama_lengkap;
+                    
+                } elseif ($request->filled('nama_member_2')) {
+                    $idMember2 = $generateId();
+                    $partner = Members::create([
+                        'id_members' => $idMember2,
+                        'nama_lengkap' => $request->nama_member_2,
+                        'alamat' => '-',
+                        'no_telepon' => $request->nomor_telepon_2,
+                        'email' => $request->email_2,
+                        'jenis_kelamin' => $request->jenis_kelamin_2,
+                        'tanggal_daftar' => now(), // Join hari ini
+                        'tanggal_selesai' => $tanggalSelesaiBaruMember, // Ikut tanggal selesai utama
+                        'paket_id' => $paket->id_paket,
+                        'status' => 'active',
+                        'partner_id' => $member->id_members,
+                    ]);
+
+                    $updateDataMember['partner_id'] = $idMember2;
+                    $namaPartner = ' & ' . $partner->nama_lengkap;
+                }
             }
+            
+            $member->update($updateDataMember);
 
             // UPLOAD BUKTI TRANSFER
             $buktiPath = null;
@@ -495,7 +531,7 @@ class MemberAdminController extends Controller
             $payment = MembershipPayment::create([
                 'member_id' => $member->id_members,
                 'paket_id' => $paket->id_paket,
-                'jenis_transaksi' => 'renewal',
+                'jenis_transaksi' => 'perpanjang', // Sesuai instruksi User Correct History
                 'nomor_invoice' => $nomorInvoice,
                 'tanggal_transaksi' => now(),
                 'metode_pembayaran' => $metodePembayaran,
@@ -503,7 +539,7 @@ class MemberAdminController extends Controller
                 'status_pembayaran' => 'completed',
                 'admin_id' => Auth::id() ?? 1,
                 'keterangan' => $keterangan,
-                'bukti_transfer' => $buktiPath, // Simpan path gambar ke DB
+                'bukti_transfer' => $buktiPath,
             ]);
 
             if (!$skipInvoice) {
@@ -512,12 +548,14 @@ class MemberAdminController extends Controller
                     if (substr($target, 0, 2) == '08')
                         $target = '628' . substr($target, 2);
 
+                    $linkAbsen = "https://furiongymjambi.com/dashboard-member?member_id=" . $member->id_members;
+
                     $pesan = "Halo *{$member->nama_lengkap}*,\n\n" .
                         "Terima kasih telah memperpanjang keanggotaan di *Furion Gym*.\n" .
                         "Perpanjangan Berhasil! ✅\n\n" .
                         "*Rincian Perpanjangan:*\n" .
                         "--------------------------------\n" .
-                        "🆔 Invoice: {$nomorInvoice}\n" .
+                        "🧾 Invoice: {$nomorInvoice}\n" .
                         "📦 Paket: {$paket->nama_paket}\n" .
                         "📅 Aktif Sampai: " . $tanggalSelesaiBaruMember->format('d M Y') . "\n" .
                         "💰 Total: Rp " . number_format($payment->nominal, 0, ',', '.') . "\n";
@@ -527,6 +565,9 @@ class MemberAdminController extends Controller
                     }
 
                     $pesan .= "--------------------------------\n\n" .
+                        "🔗 *ABSEN MEMBER*\n" .
+                        "Berikut link untuk absen kehadiran Anda:\n" .
+                        $linkAbsen . "\n\n" .
                         "Simpan pesan ini sebagai bukti pembayaran. Selamat Latihan! 💪";
 
                     if (!empty($target) && substr($target, 0, 2) == '62') {
@@ -568,7 +609,6 @@ class MemberAdminController extends Controller
         try {
             $request->validate([
                 'paket_id' => 'required|exists:paket_members,id_paket',
-                // Validasi upload bukti_transfer reaktivasi
                 'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
             ]);
 
@@ -585,6 +625,16 @@ class MemberAdminController extends Controller
 
             $isCouple = (in_array($paket->jenis, ['couple', 'promo couple']) || stripos($paket->nama_paket, 'couple') !== false);
 
+            if ($isCouple) {
+                if (!$request->filled('partner_id') && !$request->filled('nama_member_2')) {
+                    return redirect()->back()->with('error', 'Wajib memilih Pasangan terdaftar atau mengisi data Pasangan Baru untuk paket Couple.');
+                }
+
+                if ($request->filled('partner_id') && $request->partner_id == $member->id_members) {
+                    return redirect()->back()->with('error', 'Pasangan tidak boleh diri sendiri.');
+                }
+            }
+
             $tanggalMulai = Carbon::now();
             $angka = (int) filter_var($paket->durasi, FILTER_SANITIZE_NUMBER_INT);
             $durasiStr = strtolower($paket->durasi);
@@ -597,35 +647,56 @@ class MemberAdminController extends Controller
             else
                 $tanggalSelesai->addMonths($angka);
 
+            $generateId = function () {
+                do {
+                    $newId = 'FRN-' . mt_rand(100000, 999999);
+                } while (Members::where('id_members', $newId)->exists());
+                return $newId;
+            };
+
             // UPDATE MEMBER UTAMA
-            $member->update([
+            $updateDataMember = [
                 'paket_id' => $paket->id_paket,
                 'tanggal_selesai' => $tanggalSelesai,
                 'status' => 'active',
-            ]);
+            ];
 
             // UPDATE PARTNER (JIKA COUPLE)
             $namaPartner = '';
             if ($isCouple) {
-                $request->validate([
-                    'partner_id' => 'required|exists:members,id_members',
-                ], ['partner_id.required' => 'Wajib memilih Pasangan untuk paket Couple.']);
+                if ($request->filled('partner_id')) {
+                    $partner = Members::findOrFail($request->partner_id);
+                    $partner->update([
+                        'paket_id' => $paket->id_paket,
+                        'tanggal_selesai' => $tanggalSelesai,
+                        'status' => 'active',
+                        'partner_id' => $member->id_members,
+                    ]);
 
-                if ($request->partner_id == $member->id_members) {
-                    throw new \Exception('Pasangan tidak boleh diri sendiri.');
+                    $updateDataMember['partner_id'] = $partner->id_members;
+                    $namaPartner = ' & ' . $partner->nama_lengkap;
+                } elseif ($request->filled('nama_member_2')) {
+                    $idMember2 = $generateId();
+                    $partner = Members::create([
+                        'id_members' => $idMember2,
+                        'nama_lengkap' => $request->nama_member_2,
+                        'alamat' => '-',
+                        'no_telepon' => $request->nomor_telepon_2,
+                        'email' => $request->email_2,
+                        'jenis_kelamin' => $request->jenis_kelamin_2,
+                        'tanggal_daftar' => now(), // Join hari ini
+                        'tanggal_selesai' => $tanggalSelesai, // Ikut tanggal selesai utama
+                        'paket_id' => $paket->id_paket,
+                        'status' => 'active',
+                        'partner_id' => $member->id_members,
+                    ]);
+
+                    $updateDataMember['partner_id'] = $idMember2;
+                    $namaPartner = ' & ' . $partner->nama_lengkap;
                 }
-
-                $partner = Members::findOrFail($request->partner_id);
-                $partner->update([
-                    'paket_id' => $paket->id_paket,
-                    'tanggal_selesai' => $tanggalSelesai,
-                    'status' => 'active',
-                    'partner_id' => $member->id_members,
-                ]);
-
-                $member->update(['partner_id' => $partner->id_members]);
-                $namaPartner = ' & ' . $partner->nama_lengkap;
             }
+
+            $member->update($updateDataMember);
 
             // UPLOAD BUKTI TRANSFER
             $buktiPath = null;
@@ -651,7 +722,7 @@ class MemberAdminController extends Controller
             $payment = MembershipPayment::create([
                 'member_id' => $member->id_members,
                 'paket_id' => $paket->id_paket,
-                'jenis_transaksi' => 'reactivation',
+                'jenis_transaksi' => 'reaktivasi', // Sesuai instruksi User Correct History
                 'nomor_invoice' => $nomorInvoice,
                 'tanggal_transaksi' => now(),
                 'metode_pembayaran' => $metodePembayaran,
@@ -659,7 +730,7 @@ class MemberAdminController extends Controller
                 'status_pembayaran' => 'completed',
                 'admin_id' => Auth::id() ?? 1,
                 'keterangan' => $keterangan,
-                'bukti_transfer' => $buktiPath, // Simpan path gambar ke DB
+                'bukti_transfer' => $buktiPath,
             ]);
 
             if (!$skipInvoice) {
@@ -668,12 +739,14 @@ class MemberAdminController extends Controller
                     if (substr($target, 0, 2) == '08')
                         $target = '628' . substr($target, 2);
 
+                    $linkAbsen = "https://furiongymjambi.com/dashboard-member?member_id=" . $member->id_members;
+
                     $pesan = "Halo *{$member->nama_lengkap}*! 👋\n\n" .
                         "Selamat datang kembali di *Furion Gym*.\n" .
                         "Akun Anda berhasil diaktifkan! ✅\n\n" .
                         "*Rincian Re-Aktivasi:*\n" .
                         "--------------------------------\n" .
-                        "🆔 Invoice: {$nomorInvoice}\n" .
+                        "🧾 Invoice: {$nomorInvoice}\n" .
                         "📦 Paket: {$paket->nama_paket}\n" .
                         "📅 Aktif Sampai: " . $tanggalSelesai->format('d M Y') . "\n" .
                         "💰 Total Bayar: Rp " . number_format($payment->nominal, 0, ',', '.') . "\n";
@@ -683,6 +756,9 @@ class MemberAdminController extends Controller
                     }
 
                     $pesan .= "--------------------------------\n\n" .
+                        "🔗 *ABSEN MEMBER*\n" .
+                        "Berikut link untuk absen kehadiran Anda:\n" .
+                        $linkAbsen . "\n\n" .
                         "Simpan pesan ini sebagai bukti pembayaran. Selamat Latihan! 💪";
 
                     if (!empty($target) && substr($target, 0, 2) == '62') {

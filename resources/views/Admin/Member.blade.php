@@ -104,8 +104,7 @@
                 <h2 class="text-xl font-bold text-gray-800">Tambah Member Baru</h2>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
@@ -136,23 +135,19 @@
                                     class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
                                     placeholder="email@contoh.com" required>
                             </div>
+                            
+                            {{-- PERBAIKAN GENDER TAMBAH UTAMA --}}
                             <div class="col-span-1 md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
                                 <div class="flex gap-4 mt-1">
-                                    <label class="flex-1 cursor-pointer">
-                                        <input type="radio" name="jenis_kelamin" value="Laki-laki" class="peer sr-only"
-                                            required>
-                                        <div
-                                            class="text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-600 hover:bg-gray-50 transition-all">
-                                            Laki-laki</div>
-                                    </label>
-                                    <label class="flex-1 cursor-pointer">
-                                        <input type="radio" name="jenis_kelamin" value="Perempuan" class="peer sr-only"
-                                            required>
-                                        <div
-                                            class="text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 hover:bg-gray-50 transition-all">
-                                            Perempuan</div>
-                                    </label>
+                                    <div class="flex-1">
+                                        <input type="radio" name="jenis_kelamin" id="jk_laki_tambah_utama" value="Laki-laki" class="peer sr-only" required>
+                                        <label for="jk_laki_tambah_utama" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-600 hover:bg-gray-50 transition-all">Laki-laki</label>
+                                    </div>
+                                    <div class="flex-1">
+                                        <input type="radio" name="jenis_kelamin" id="jk_perempuan_tambah_utama" value="Perempuan" class="peer sr-only" required>
+                                        <label for="jk_perempuan_tambah_utama" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 hover:bg-gray-50 transition-all">Perempuan</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -160,19 +155,16 @@
 
                     {{-- 2. Form Pasangan --}}
                     <div id="coupleMemberForm" class="hidden mb-8 bg-pink-50/50 p-6 rounded-2xl border border-pink-100">
-                        <h3 class="text-xs font-bold text-pink-500 uppercase tracking-wider mb-4">Informasi Pasangan
-                            (Couple)</h3>
+                        <h3 class="text-xs font-bold text-pink-500 uppercase tracking-wider mb-4">Informasi Pasangan (Couple)</h3>
                         <div class="mb-5 bg-white p-4 rounded-xl border border-pink-200 shadow-sm">
-                            <label class="block text-xs font-bold text-pink-700 mb-2">Pilih Member Terdaftar
-                                (Opsional)</label>
+                            <label class="block text-xs font-bold text-pink-700 mb-2">Pilih Member Terdaftar (Opsional)</label>
                             <select name="partner_id" id="inputPartnerTambah" class="select2-couple w-full text-sm">
                                 <option value="" selected>-- Ketik Nama atau ID Pasangan --</option>
                                 @foreach($members as $m)
                                     <option value="{{ $m->id_members }}">{{ $m->nama_lengkap }} ({{ $m->id_members }})</option>
                                 @endforeach
                             </select>
-                            <p class="text-[10px] text-gray-500 mt-1.5">*Pilih ini jika pasangan sudah terdaftar. Jika
-                                belum, isi form di bawah.</p>
+                            <p class="text-[10px] text-gray-500 mt-1.5">*Pilih ini jika pasangan sudah terdaftar. Jika belum, isi form di bawah.</p>
                         </div>
                         <div class="flex items-center justify-center mb-5">
                             <div class="h-px bg-pink-200 flex-1"></div>
@@ -195,23 +187,19 @@
                                 <input type="email" name="email_2" id="inputEmail2"
                                     class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-pink-100 focus:border-pink-500">
                             </div>
+                            
+                            {{-- PERBAIKAN GENDER TAMBAH PASANGAN --}}
                             <div class="col-span-1 md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
                                 <div class="flex gap-4 mt-1">
-                                    <label class="flex-1 cursor-pointer">
-                                        <input type="radio" name="jenis_kelamin_2" value="Laki-laki"
-                                            class="peer sr-only group-radio-2">
-                                        <div
-                                            class="text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 hover:bg-gray-50 transition-all">
-                                            Laki-laki</div>
-                                    </label>
-                                    <label class="flex-1 cursor-pointer">
-                                        <input type="radio" name="jenis_kelamin_2" value="Perempuan"
-                                            class="peer sr-only group-radio-2">
-                                        <div
-                                            class="text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 hover:bg-gray-50 transition-all">
-                                            Perempuan</div>
-                                    </label>
+                                    <div class="flex-1">
+                                        <input type="radio" name="jenis_kelamin_2" id="jk_laki_tambah_couple" value="Laki-laki" class="peer sr-only group-radio-2">
+                                        <label for="jk_laki_tambah_couple" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 hover:bg-gray-50 transition-all">Laki-laki</label>
+                                    </div>
+                                    <div class="flex-1">
+                                        <input type="radio" name="jenis_kelamin_2" id="jk_perempuan_tambah_couple" value="Perempuan" class="peer sr-only group-radio-2">
+                                        <label for="jk_perempuan_tambah_couple" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 hover:bg-gray-50 transition-all">Perempuan</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -268,8 +256,7 @@
                         </div>
 
                         <div class="bg-white rounded-xl p-4 border border-blue-100 shadow-sm mt-4">
-                            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Ringkasan Pembayaran
-                            </h3>
+                            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Ringkasan Pembayaran</h3>
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm text-gray-500">Durasi Paket</span>
                                 <span id="display_durasi_tambah_member" class="text-sm font-medium text-gray-800">-</span>
@@ -286,8 +273,7 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Upload Bukti Transfer
-                            (Opsional)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Upload Bukti Transfer (Opsional)</label>
                         <input type="file" name="bukti_transfer"
                             class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-200 rounded-xl">
                     </div>
@@ -302,8 +288,7 @@
                                 Bypass Invoice & Laporan (Owner Only)
                             </label>
                         </div>
-                        <p class="text-[10px] text-gray-500 ml-6 mb-3">Centang jika pendaftaran ini digratiskan / tidak
-                            masuk laporan keuangan.</p>
+                        <p class="text-[10px] text-gray-500 ml-6 mb-3">Centang jika pendaftaran ini digratiskan / tidak masuk laporan keuangan.</p>
 
                         <div id="owner_password_field_tambah" class="hidden ml-6 animate-fade-in-down">
                             <label class="block text-xs font-bold text-red-600 mb-1">PASSWORD OWNER</label>
@@ -337,8 +322,7 @@
                 <button onclick="closeEditModal()"
                     class="text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 hover:bg-gray-100 p-2 rounded-full">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
@@ -367,23 +351,19 @@
                                     class="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-xl px-4 py-2.5 text-sm cursor-not-allowed"
                                     readonly>
                             </div>
+                            
+                            {{-- PERBAIKAN GENDER EDIT --}}
                             <div class="col-span-1 md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
                                 <div class="flex gap-4 mt-1">
-                                    <label class="flex-1 cursor-pointer">
-                                        <input type="radio" name="jenis_kelamin" value="Laki-laki" id="edit_gender_male"
-                                            class="peer sr-only">
-                                        <div
-                                            class="text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-600 hover:bg-gray-50 transition-all">
-                                            Laki-laki</div>
-                                    </label>
-                                    <label class="flex-1 cursor-pointer">
-                                        <input type="radio" name="jenis_kelamin" value="Perempuan" id="edit_gender_female"
-                                            class="peer sr-only">
-                                        <div
-                                            class="text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 hover:bg-gray-50 transition-all">
-                                            Perempuan</div>
-                                    </label>
+                                    <div class="flex-1">
+                                        <input type="radio" name="jenis_kelamin" id="edit_gender_male" value="Laki-laki" class="peer sr-only" required>
+                                        <label for="edit_gender_male" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-600 hover:bg-gray-50 transition-all">Laki-laki</label>
+                                    </div>
+                                    <div class="flex-1">
+                                        <input type="radio" name="jenis_kelamin" id="edit_gender_female" value="Perempuan" class="peer sr-only" required>
+                                        <label for="edit_gender_female" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 hover:bg-gray-50 transition-all">Perempuan</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -406,14 +386,13 @@
     <div id="modalPerpanjangMember"
         class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
         <div id="modalBoxPerpanjang"
-            class="bg-white w-full max-w-lg rounded-3xl shadow-2xl transform opacity-0 scale-95 translate-y-4 transition-all duration-300 max-h-[90vh] overflow-y-auto">
+            class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl transform opacity-0 scale-95 translate-y-4 transition-all duration-300 max-h-[90vh] overflow-y-auto">
             <div class="sticky top-0 bg-white z-10 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                 <h2 class="text-xl font-bold text-gray-800">Perpanjang Masa Aktif</h2>
                 <button onclick="closePerpanjangModal()"
                     class="text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 hover:bg-gray-100 p-2 rounded-full">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
@@ -424,8 +403,7 @@
                     <input type="hidden" name="tipe_paket" id="inputTipePaketPerpanjang">
 
                     <div class="mb-6 border border-gray-200 p-4 rounded-xl">
-                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Informasi Member Aktif
-                        </h3>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Informasi Member Aktif</h3>
                         <div class="space-y-3 text-sm">
                             <div class="flex justify-between border-b border-gray-100 pb-1">
                                 <span class="text-gray-600">Nama Member</span>
@@ -439,12 +417,11 @@
                     </div>
 
                     <div class="bg-green-50/50 rounded-2xl p-5 border border-green-100 mb-6">
-                        <h3 class="text-xs font-bold text-green-800 uppercase tracking-wider mb-4">Pilih Durasi Tambahan
-                        </h3>
+                        <h3 class="text-xs font-bold text-green-800 uppercase tracking-wider mb-4">Pilih Durasi Tambahan</h3>
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-green-900 mb-1">Paket Perpanjangan</label>
                             <select name="id_paket" id="selectPaketPerpanjang"
-                                class="w-full bg-white border border-green-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-200 focus:border-green-500 text-gray-700"
+                                class="w-full bg-white border border-green-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-200 focus:border-green-500 text-gray-700"
                                 required>
                                 <option value="" disabled selected>Pilih durasi paket...</option>
                                 <optgroup label="Paket Couple (2 Orang)">
@@ -466,6 +443,7 @@
                                             data-durasi="{{ $pp->durasi }}">{{ $pp->nama_promo ?? $pp->nama_paket }}
                                             ({{ $pp->durasi }}) - PROMO</option>
                                     @endforeach
+                                </optgroup>
                                 <optgroup label="Paket Promo Couple">
                                     @foreach ($paketPromoCouple as $ppc)
                                         <option value="{{ $ppc->id_paket }}" data-tipe="promo couple"
@@ -473,29 +451,66 @@
                                             {{ $ppc->nama_paket }} ({{ $ppc->durasi }}) - PROMO COUPLE</option>
                                     @endforeach
                                 </optgroup>
-                                </optgroup>
                             </select>
                         </div>
 
-                        <div id="renewCoupleSection" class="hidden animate-fade-in-down mb-4">
-                            <div class="bg-white p-3 rounded-xl border border-green-200 shadow-sm">
-                                <label class="block text-xs font-bold text-green-700 mb-2">Pilih Pasangan (Wajib)</label>
+                        {{-- PERBAIKAN GENDER & UI COUPLE PERPANJANG --}}
+                        <div id="renewCoupleSection" class="hidden mt-6 mb-4 bg-white p-5 rounded-2xl border border-green-200 shadow-sm">
+                            <h3 class="text-xs font-bold text-green-700 uppercase tracking-wider mb-4">Informasi Pasangan (Couple)</h3>
+                            
+                            <div class="mb-5">
+                                <label class="block text-xs font-bold text-green-700 mb-2">Pilih Member Terdaftar (Opsional)</label>
                                 <select name="partner_id" id="inputPartnerRenew" class="select2-couple w-full text-sm">
-                                    <option value="" selected disabled>-- Ketik Nama/ID Pasangan --</option>
+                                    <option value="" selected>-- Ketik Nama atau ID Pasangan --</option>
                                     @foreach($members as $m)
-                                        <option value="{{ $m->id_members }}">{{ $m->nama_lengkap }} ({{ $m->id_members }})
-                                        </option>
+                                        <option value="{{ $m->id_members }}">{{ $m->nama_lengkap }} ({{ $m->id_members }})</option>
                                     @endforeach
                                 </select>
-                                <p class="text-[10px] text-gray-500 mt-1">*Masa aktif pasangan akan ikut diperpanjang.</p>
+                                <p class="text-[10px] text-gray-500 mt-1.5">*Masa aktif pasangan akan ikut diperpanjang.</p>
+                            </div>
+
+                            <div class="flex items-center justify-center mb-5">
+                                <div class="h-px bg-green-200 flex-1"></div>
+                                <span class="px-3 text-[10px] font-bold text-green-500 tracking-wider">ATAU BUAT AKUN BARU</span>
+                                <div class="h-px bg-green-200 flex-1"></div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pasangan Baru</label>
+                                    <input type="text" name="nama_member_2" id="inputNama2Renew"
+                                        class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-100 focus:border-green-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+                                    <input type="number" name="nomor_telepon_2" id="inputTelp2Renew"
+                                        class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-100 focus:border-green-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input type="email" name="email_2" id="inputEmail2Renew"
+                                        class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-100 focus:border-green-500">
+                                </div>
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
+                                    <div class="flex gap-4 mt-1">
+                                        <div class="flex-1">
+                                            <input type="radio" name="jenis_kelamin_2" id="jk_laki_renew" value="Laki-laki" class="peer sr-only group-radio-renew">
+                                            <label for="jk_laki_renew" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-600 hover:bg-gray-50 transition-all">Laki-laki</label>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="radio" name="jenis_kelamin_2" id="jk_perempuan_renew" value="Perempuan" class="peer sr-only group-radio-renew">
+                                            <label for="jk_perempuan_renew" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-600 hover:bg-gray-50 transition-all">Perempuan</label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <input type="date" name="tanggal_mulai" id="inputTanggalMulaiPerpanjang" class="hidden">
 
-                        <div class="bg-white rounded-xl p-4 border border-green-200 shadow-sm mt-4">
-                            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Ringkasan Pembayaran
-                            </h3>
+                        <div class="bg-white rounded-xl p-4 border border-green-100 shadow-sm mt-4">
+                            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Ringkasan Pembayaran</h3>
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm text-gray-500">Durasi Tambahan</span>
                                 <span id="display_durasi_tambah" class="text-sm font-medium text-gray-800">-</span>
@@ -506,15 +521,13 @@
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-lg font-bold text-gray-700">Total Tagihan</span>
-                                <span id="display_total_perpanjang" class="text-2xl font-extrabold text-green-700">Rp
-                                    0</span>
+                                <span id="display_total_perpanjang" class="text-2xl font-extrabold text-green-700">Rp 0</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Upload Bukti Transfer
-                            (Opsional)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Upload Bukti Transfer (Opsional)</label>
                         <input type="file" name="bukti_transfer"
                             class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 border border-gray-200 rounded-xl">
                     </div>
@@ -529,8 +542,7 @@
                                 Bypass Invoice & Laporan (Owner Only)
                             </label>
                         </div>
-                        <p class="text-[10px] text-gray-500 ml-6 mb-3">Centang jika perpanjangan ini tidak masuk laporan
-                            keuangan.</p>
+                        <p class="text-[10px] text-gray-500 ml-6 mb-3">Centang jika perpanjangan ini tidak masuk laporan keuangan.</p>
 
                         <div id="owner_password_field_perpanjang" class="hidden ml-6 animate-fade-in-down">
                             <label class="block text-xs font-bold text-red-600 mb-1">PASSWORD OWNER</label>
@@ -558,14 +570,13 @@
     <div id="modalReaktifasiMember"
         class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
         <div id="modalBoxReaktifasi"
-            class="bg-white w-full max-w-lg rounded-3xl shadow-2xl transform opacity-0 scale-95 translate-y-4 transition-all duration-300 max-h-[90vh] overflow-y-auto">
+            class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl transform opacity-0 scale-95 translate-y-4 transition-all duration-300 max-h-[90vh] overflow-y-auto">
             <div class="sticky top-0 bg-white z-10 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                 <h2 class="text-xl font-bold text-gray-800">Re-aktifasi Member</h2>
                 <button onclick="closeReaktifasiModal()"
                     class="text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 hover:bg-gray-100 p-2 rounded-full">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
@@ -589,11 +600,10 @@
                     </div>
 
                     <div class="bg-yellow-50/50 rounded-2xl p-5 border border-yellow-100 mb-6">
-                        <h3 class="text-xs font-bold text-yellow-800 uppercase tracking-wider mb-4">Pilih Paket Baru (Mulai
-                            Hari Ini)</h3>
+                        <h3 class="text-xs font-bold text-yellow-800 uppercase tracking-wider mb-4">Pilih Paket Baru (Mulai Hari Ini)</h3>
                         <label class="block text-sm font-medium text-yellow-900 mb-1">Paket Membership</label>
                         <select name="paket_id" id="selectPaketReaktifasi"
-                            class="w-full bg-white border border-yellow-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-200 focus:border-yellow-500 text-gray-700"
+                            class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-200 focus:border-yellow-500 text-gray-700"
                             required>
                             <option value="" disabled selected>Pilih paket re-aktifasi...</option>
                             <optgroup label="Paket Couple">
@@ -625,23 +635,61 @@
                         </select>
                         <input type="hidden" name="tipe_paket" id="inputTipePaketReaktifasi">
 
-                        <div id="reactivateCoupleSection" class="hidden animate-fade-in-down mb-4 mt-4">
-                            <div class="bg-white p-3 rounded-xl border border-yellow-200 shadow-sm">
-                                <label class="block text-xs font-bold text-yellow-700 mb-2">Pilih Pasangan (Wajib)</label>
+                        {{-- PERBAIKAN GENDER & UI COUPLE REAKTIVASI --}}
+                        <div id="reactivateCoupleSection" class="hidden mt-6 mb-4 bg-white p-5 rounded-2xl border border-yellow-200 shadow-sm">
+                            <h3 class="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-4">Informasi Pasangan (Couple)</h3>
+                            
+                            <div class="mb-5">
+                                <label class="block text-xs font-bold text-yellow-700 mb-2">Pilih Member Terdaftar (Opsional)</label>
                                 <select name="partner_id" id="inputPartnerReactivate" class="select2-couple w-full text-sm">
-                                    <option value="" selected disabled>-- Ketik Nama/ID Pasangan --</option>
+                                    <option value="" selected>-- Ketik Nama atau ID Pasangan --</option>
                                     @foreach($members as $m)
-                                        <option value="{{ $m->id_members }}">{{ $m->nama_lengkap }} ({{ $m->id_members }})
-                                        </option>
+                                        <option value="{{ $m->id_members }}">{{ $m->nama_lengkap }} ({{ $m->id_members }})</option>
                                     @endforeach
                                 </select>
-                                <p class="text-[10px] text-gray-500 mt-1">*Masa aktif pasangan akan ikut diaktifkan.</p>
+                                <p class="text-[10px] text-gray-500 mt-1.5">*Masa aktif pasangan akan ikut diaktifkan.</p>
+                            </div>
+
+                            <div class="flex items-center justify-center mb-5">
+                                <div class="h-px bg-yellow-200 flex-1"></div>
+                                <span class="px-3 text-[10px] font-bold text-yellow-500 tracking-wider">ATAU BUAT AKUN BARU</span>
+                                <div class="h-px bg-yellow-200 flex-1"></div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pasangan Baru</label>
+                                    <input type="text" name="nama_member_2" id="inputNama2Reactivate"
+                                        class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-100 focus:border-yellow-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+                                    <input type="number" name="nomor_telepon_2" id="inputTelp2Reactivate"
+                                        class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-100 focus:border-yellow-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input type="email" name="email_2" id="inputEmail2Reactivate"
+                                        class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-100 focus:border-yellow-500">
+                                </div>
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
+                                    <div class="flex gap-4 mt-1">
+                                        <div class="flex-1">
+                                            <input type="radio" name="jenis_kelamin_2" id="jk_laki_reactivate" value="Laki-laki" class="peer sr-only group-radio-reactivate">
+                                            <label for="jk_laki_reactivate" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 peer-checked:text-yellow-600 hover:bg-gray-50 transition-all">Laki-laki</label>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="radio" name="jenis_kelamin_2" id="jk_perempuan_reactivate" value="Perempuan" class="peer sr-only group-radio-reactivate">
+                                            <label for="jk_perempuan_reactivate" class="block cursor-pointer text-center py-2.5 rounded-xl border border-gray-200 text-gray-500 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 peer-checked:text-yellow-600 hover:bg-gray-50 transition-all">Perempuan</label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="bg-white rounded-xl p-4 border border-yellow-200 shadow-sm mt-4">
-                            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Ringkasan Pembayaran
-                            </h3>
+                        <div class="bg-white rounded-xl p-4 border border-yellow-100 shadow-sm mt-4">
+                            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Ringkasan Pembayaran</h3>
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm text-gray-500">Tanggal Mulai Baru</span>
                                 <span id="display_tanggal_mulai_baru"
@@ -654,15 +702,13 @@
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-lg font-bold text-gray-700">Total Tagihan</span>
-                                <span id="display_total_reaktifasi" class="text-2xl font-extrabold text-yellow-700">Rp
-                                    0</span>
+                                <span id="display_total_reaktifasi" class="text-2xl font-extrabold text-yellow-700">Rp 0</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Upload Bukti Transfer
-                            (Opsional)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Upload Bukti Transfer (Opsional)</label>
                         <input type="file" name="bukti_transfer"
                             class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 border border-gray-200 rounded-xl">
                     </div>
@@ -677,8 +723,7 @@
                                 Bypass Invoice & Laporan (Owner Only)
                             </label>
                         </div>
-                        <p class="text-[10px] text-gray-500 ml-6 mb-3">Centang jika re-aktifasi ini tidak masuk laporan
-                            keuangan.</p>
+                        <p class="text-[10px] text-gray-500 ml-6 mb-3">Centang jika re-aktifasi ini tidak masuk laporan keuangan.</p>
 
                         <div id="owner_password_field_reaktifasi" class="hidden ml-6 animate-fade-in-down">
                             <label class="block text-xs font-bold text-red-600 mb-1">PASSWORD OWNER</label>
@@ -755,7 +800,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                 </svg>
                                 Riwayat Pembayaran
                             </h4>
@@ -837,7 +882,7 @@
 
 @endsection
 
-{{-- SCRIPTS (DI-PUSH KE MASTER TEMPLATE) --}}
+{{-- SCRIPTS --}}
 @push('scripts')
     {{-- Library Select2 --}}
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -855,11 +900,11 @@
 
             if (checkbox.checked) {
                 field.classList.remove('hidden');
-                inputField.setAttribute('required', 'required'); // Wajib isi jika dicentang
+                inputField.setAttribute('required', 'required');
             } else {
                 field.classList.add('hidden');
-                inputField.removeAttribute('required'); // Tidak wajib jika tidak dicentang
-                inputField.value = ''; // Kosongkan nilainya
+                inputField.removeAttribute('required');
+                inputField.value = ''; 
             }
         }
     </script>

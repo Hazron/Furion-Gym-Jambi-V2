@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Owner;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use App\Models\members; // Pastikan Model diawali huruf besar (standar Laravel): Member
+use App\Models\Members;
 use App\Models\Order;
 use App\Models\MembershipPayment;
-use App\Models\absen; // Pastikan Model: Absen
+use App\Models\Absen;
 
 class DashboardOwnerController extends Controller
 {
@@ -48,13 +48,13 @@ class DashboardOwnerController extends Controller
         }
 
         // 2. LOGIC MEMBER & VISIT
-        $totalMemberAktif = members::where('status', 'active')->count();
-        $newMemberThisMonth = members::where('status', 'active')
+        $totalMemberAktif = Members::where('status', 'active')->count();
+        $newMemberThisMonth = Members::where('status', 'active')
             ->whereMonth('tanggal_daftar', $now->month)
             ->whereYear('tanggal_daftar', $now->year)->count();
 
-        $visitToday = absen::whereDate('waktu_masuk', Carbon::today())->count();
-        $totalVisitLast30Days = absen::where('waktu_masuk', '>=', Carbon::now()->subDays(30))->count();
+        $visitToday = Absen::whereDate('waktu_masuk', Carbon::today())->count();
+        $totalVisitLast30Days = Absen::where('waktu_masuk', '>=', Carbon::now()->subDays(30))->count();
         $averageDailyVisit = $totalVisitLast30Days > 0 ? ceil($totalVisitLast30Days / 30) : 0;
 
         $pendingMembership = MembershipPayment::where('status_pembayaran', 'pending')->sum('nominal');
@@ -146,7 +146,7 @@ class DashboardOwnerController extends Controller
         ];
 
         // 4. LOGIKA AKTIVITAS HARI INI
-        $absenToday = absen::with('member')->whereDate('waktu_masuk', Carbon::today())->get()
+        $absenToday = Absen::with('member')->whereDate('waktu_masuk', Carbon::today())->get()
             ->map(function ($item) {
                 return [
                     'type' => 'visit',
@@ -213,7 +213,7 @@ class DashboardOwnerController extends Controller
         $recentTransactions = $laporanData->take(5);
         $pendingTransactions = Order::with('member')->where('payment_status', 'pending')->latest()->get();
 
-        return view('owner.dashboardOwner', compact(
+        return view('Owner.dashboardOwner', compact(
             'totalPendapatan',
             'percentageChange',
             'totalMemberAktif',

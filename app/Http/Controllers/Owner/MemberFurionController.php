@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
-use App\Models\members;
-use App\Models\membershipPayment;
+use App\Models\Members;
+use App\Models\MembershipPayment;
 use Carbon\Carbon;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class MemberFurionController extends Controller
         $now = Carbon::now();
 
         if ($request->ajax()) {
-            $data = members::with(['paket', 'promo', 'membershipPayments.paket'])
+            $data = Members::with(['paket', 'promo', 'membershipPayments.paket'])
                 ->select('members.*')
                 ->latest('updated_at');
 
@@ -97,23 +97,23 @@ class MemberFurionController extends Controller
 
 
         // Logic untuk Card Statistik 
-        $totalMember = members::count();
-        $newMemberThisMonth = members::whereMonth('created_at', now()->month)->count();
-        $memberAktif = members::where('status', 'active')->count();
+        $totalMember = Members::count();
+        $newMemberThisMonth = Members::whereMonth('created_at', now()->month)->count();
+        $memberAktif = Members::where('status', 'active')->count();
         $retentionRate = $totalMember > 0 ? round(($memberAktif / $totalMember) * 100, 1) : 0;
-        $expiredMember = members::where('status', '!=', 'active')->count();
-        $expiredThisWeek = members::whereBetween('tanggal_selesai', [now()->startOfWeek(), now()->endOfWeek()])->count();
+        $expiredMember = Members::where('status', '!=', 'active')->count();
+        $expiredThisWeek = Members::whereBetween('tanggal_selesai', [now()->startOfWeek(), now()->endOfWeek()])->count();
         $renewalThisMonth = MembershipPayment::where('jenis_transaksi', 'renewal')->whereMonth('created_at', now()->month)->count();
 
-        $memberBaruBulanIni = members::whereMonth('tanggal_daftar', $now->month)
+        $memberBaruBulanIni = Members::whereMonth('tanggal_daftar', $now->month)
             ->whereYear('tanggal_daftar', $now->year)
             ->count();
-        return view('owner.memberfurion', compact('totalMember', 'newMemberThisMonth', 'memberAktif', 'retentionRate', 'expiredMember', 'expiredThisWeek', 'renewalThisMonth', 'memberBaruBulanIni'));
+        return view('Owner.MemberFurion', compact('totalMember', 'newMemberThisMonth', 'memberAktif', 'retentionRate', 'expiredMember', 'expiredThisWeek', 'renewalThisMonth', 'memberBaruBulanIni'));
     }
 
     public function getMemberDetail($id)
     {
-        $member = members::where('id_members', $id)
+        $member = Members::where('id_members', $id)
             ->with([
                 'paket',
                 'promo',

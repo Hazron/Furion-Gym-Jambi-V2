@@ -34,7 +34,7 @@ class order extends Model
     // Relasi ke member
     public function member()
     {
-        return $this->belongsTo(members::class, 'member_id', 'id_members');
+        return $this->belongsTo(Members::class, 'member_id', 'id_members');
     }
 
     // Relasi ke kasir/admin

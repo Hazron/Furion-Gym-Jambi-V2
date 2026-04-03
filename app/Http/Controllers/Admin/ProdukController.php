@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Produk;
-use App\Models\members;
+use App\Models\Members;
 use Illuminate\Support\Str;
 use App\Models\order;
 use App\Models\order_item;
@@ -17,7 +17,7 @@ class ProdukController extends Controller
     public function index()
     {
         $produks = Produk::all();
-        $members = members::all();
+        $members = Members::all();
         return view('Admin.OrderBarang', compact('produks', 'members'));
     }
 

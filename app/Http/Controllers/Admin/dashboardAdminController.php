@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Members;
 use App\Models\MembershipPayment;
 use App\Models\Order;
-use App\Models\Absen; // Pastikan Model Absen huruf besar/kecil sesuai file Anda
+use App\Models\Absen;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -59,22 +59,22 @@ class DashboardAdminController extends Controller
             ->groupBy('date')
             ->pluck('total', 'date');
 
-        // --- MENYUSUN ARRAY AWAL (Member & Revenue) ---
+// --- MENYUSUN ARRAY AWAL (Member & Revenue) ---
 
         // 1. Chart Data: 7 Hari Terakhir
         $chart7Days = [
             'labels'  => [],
-            'Members' => [],
+            'members' => [], // SUDAH DIUBAH: m kecil
             'revenue' => [],
-            'visits'  => [] // Kita siapkan slot kosong
+            'visits'  => []
         ];
 
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i)->format('Y-m-d');
-            $dayLabel = Carbon::now()->subDays($i)->isoFormat('ddd'); // Sen, Sel
+            $dayLabel = Carbon::now()->subDays($i)->isoFormat('ddd');
 
             $chart7Days['labels'][]  = $dayLabel;
-            $chart7Days['Members'][] = $rawMember30[$date] ?? 0;
+            $chart7Days['members'][] = $rawMember30[$date] ?? 0; // SUDAH DIUBAH
 
             $revOrder = $rawOrder30[$date] ?? 0;
             $revMemb  = $rawMemberPay30[$date] ?? 0;
@@ -84,7 +84,7 @@ class DashboardAdminController extends Controller
         // 2. Chart Data: 30 Hari Terakhir
         $chart30Days = [
             'labels'  => [],
-            'Members' => [],
+            'members' => [], // SUDAH DIUBAH: m kecil
             'revenue' => [],
             'visits'  => []
         ];
@@ -94,7 +94,7 @@ class DashboardAdminController extends Controller
             $label = Carbon::now()->subDays($i)->format('d M');
 
             $chart30Days['labels'][]  = $label;
-            $chart30Days['Members'][] = $rawMember30[$date] ?? 0;
+            $chart30Days['members'][] = $rawMember30[$date] ?? 0; // SUDAH DIUBAH
 
             $revOrder = $rawOrder30[$date] ?? 0;
             $revMemb  = $rawMemberPay30[$date] ?? 0;
@@ -105,7 +105,7 @@ class DashboardAdminController extends Controller
         $chartToday = [
             'labels'  => [],
             'revenue' => [],
-            'Members' => [], // Kosongkan saja untuk per jam
+            'members' => [], // Tambahkan ini agar tidak undefined di JS
             'visits'  => []
         ];
 

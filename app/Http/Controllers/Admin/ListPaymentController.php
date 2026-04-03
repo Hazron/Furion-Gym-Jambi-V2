@@ -62,7 +62,7 @@ class ListPaymentController extends Controller
             'transaksi_hari_ini' => Order::whereDate('created_at', Carbon::today())->count(),
         ];
 
-        return view('Admin.listPaymentBarang', compact('orders', 'stats', 'periode'));
+        return view('Admin.ListPaymentBarang', compact('orders', 'stats', 'periode'));
     }
 
     public function updatePaymentStatus(Request $request, $id)
@@ -101,13 +101,13 @@ class ListPaymentController extends Controller
                 return back()->with('error', 'FORMAT NOMOR WHATSAPP TIDAK VALID.');
             }
 
-            $pesan = "*INVOICE PEMBELIAN* 🧾\n";
+            $pesan = "*INVOICE PEMBELIAN* ðŸ§¾\n";
             $pesan .= "FURION GYM STORE\n\n";
 
             $pesan .= "NO. INVOICE : {$order->invoice_code}\n";
             $pesan .= "TANGGAL : " . Carbon::parse($order->created_at)->format('d M Y H:i') . "\n";
             $pesan .= "PEMBELI : " . ($order->member->nama_lengkap ?? 'GUEST') . "\n";
-            $pesan .= "STATUS : LUNAS ✅\n";
+            $pesan .= "STATUS : LUNAS âœ…\n";
             $pesan .= "--------------------------------\n";
             $pesan .= "*DETAIL BARANG:*\n";
 
@@ -122,7 +122,7 @@ class ListPaymentController extends Controller
             $pesan .= "--------------------------------\n";
             $pesan .= "*TOTAL BAYAR : RP " . number_format($order->total_payment, 0, ',', '.') . "*\n";
             $pesan .= "--------------------------------\n\n";
-            $pesan .= "TERIMA KASIH TELAH BERBELANJA DI FURION GYM! 💪";
+            $pesan .= "TERIMA KASIH TELAH BERBELANJA DI FURION GYM! ðŸ’ª";
 
             $tokenFonnte = "uyH3RdWC5A7yoKvu2zaU"; // TOKEN ANDA
 

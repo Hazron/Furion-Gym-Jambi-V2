@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             });
-        }, 150); // Jeda diperpanjang sedikit agar animasi Tailwind selesai
+        }, 150); // Jeda agar animasi Tailwind selesai
     }
 
 
@@ -174,10 +174,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.handlePaketChange = function(select) {
         const option = select.options[select.selectedIndex];
-        const tipe = option.getAttribute('data-tipe'); // Ini akan mengambil nilai: reguler, couple, promo, atau promo couple
+        const tipe = option.getAttribute('data-tipe');
         document.getElementById('inputTipePaketTambah').value = tipe;
 
-        // LOGIKA CERDAS: Cek apakah tipe adalah 'couple' / 'promo couple', atau teksnya mengandung kata couple
         const isCouple = (tipe === 'couple' || tipe === 'promo couple' || option.text.toLowerCase().includes('couple'));
 
         const coupleForm = document.getElementById('coupleMemberForm');
@@ -190,12 +189,12 @@ document.addEventListener('DOMContentLoaded', function () {
             initSafeSelect2('#inputPartnerTambah', '#modalTambahMember');
 
             partnerInput.on('change', function() {
-                if ($(this).val() !== '') {
-                    inputs2.forEach(el => { el.removeAttribute('required'); });
-                    radios2.forEach(el => { el.removeAttribute('required'); });
+                if ($(this).val() !== '' && $(this).val() !== null) {
+                    inputs2.forEach(el => { if(el) el.removeAttribute('required'); });
+                    radios2.forEach(el => { if(el) el.removeAttribute('required'); });
                 } else {
-                    inputs2.forEach(el => el.setAttribute('required', true));
-                    radios2.forEach(el => el.setAttribute('required', true));
+                    inputs2.forEach(el => { if(el) el.setAttribute('required', true); });
+                    radios2.forEach(el => { if(el) el.setAttribute('required', true); });
                 }
             });
             partnerInput.trigger('change');
@@ -206,8 +205,8 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 partnerInput.val('').trigger('change');
             }
-            inputs2.forEach(el => { el.removeAttribute('required'); el.value = ''; });
-            radios2.forEach(el => { el.removeAttribute('required'); el.checked = false; });
+            inputs2.forEach(el => { if(el) { el.removeAttribute('required'); el.value = ''; } });
+            radios2.forEach(el => { if(el) { el.removeAttribute('required'); el.checked = false; } });
         }
     };
 
@@ -246,19 +245,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementById('inputTipePaketPerpanjang').value = tipe;
 
-        // LOGIKA CERDAS COUPLE
         const isCouple = (tipe === 'couple' || tipe === 'promo couple' || selectedOption.text.toLowerCase().includes('couple'));
 
         const coupleSection = document.getElementById('renewCoupleSection');
         const partnerInput = $('#inputPartnerRenew');
         const currentMemberId = document.getElementById('perpanjang_id_member').value;
 
+        // Elemen input untuk member baru di modal perpanjang
+        const inputs2Renew = [
+            document.getElementById('inputNama2Renew'), 
+            document.getElementById('inputTelp2Renew'), 
+            document.getElementById('inputEmail2Renew')
+        ];
+        const radios2Renew = document.querySelectorAll('.group-radio-renew');
+
         if (isCouple) {
             coupleSection.classList.remove('hidden');
-            partnerInput.prop('required', true);
             partnerInput.find('option').prop('disabled', false);
             partnerInput.find('option[value="'+currentMemberId+'"]').prop('disabled', true);
             initSafeSelect2('#inputPartnerRenew', '#modalPerpanjangMember');
+
+            // Logika untuk toggle required jika pilih dari dropdown vs daftar baru
+            partnerInput.off('change.couple').on('change.couple', function() {
+                if ($(this).val() !== '' && $(this).val() !== null) {
+                    inputs2Renew.forEach(el => { if(el) el.removeAttribute('required'); });
+                    radios2Renew.forEach(el => { if(el) el.removeAttribute('required'); });
+                } else {
+                    inputs2Renew.forEach(el => { if(el) el.setAttribute('required', true); });
+                    radios2Renew.forEach(el => { if(el) el.setAttribute('required', true); });
+                }
+            });
+            partnerInput.trigger('change.couple');
+
         } else {
             coupleSection.classList.add('hidden');
             partnerInput.prop('required', false);
@@ -267,6 +285,9 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 partnerInput.val('').trigger('change');
             }
+
+            inputs2Renew.forEach(el => { if(el) { el.removeAttribute('required'); el.value = ''; } });
+            radios2Renew.forEach(el => { if(el) { el.removeAttribute('required'); el.checked = false; } });
         }
 
         if (!rawTanggalSelesaiAwal) return;
@@ -321,6 +342,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectPaketReaktifasi = document.getElementById('selectPaketReaktifasi');
 
     window.updateReaktifasiSummary = function() {
+        if (selectPaketReaktifasi.selectedIndex < 0) return;
         const selectedOption = selectPaketReaktifasi.options[selectPaketReaktifasi.selectedIndex];
         const durasiStr = selectedOption.getAttribute('data-durasi') || '0';
         const hargaRaw = parseInt(selectedOption.getAttribute('data-harga')) || 0;
@@ -328,19 +350,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementById('inputTipePaketReaktifasi').value = tipe;
 
-        // LOGIKA CERDAS COUPLE
         const isCouple = (tipe === 'couple' || tipe === 'promo couple' || selectedOption.text.toLowerCase().includes('couple'));
 
         const coupleSection = document.getElementById('reactivateCoupleSection');
         const partnerInput = $('#inputPartnerReactivate');
         const currentMemberId = document.getElementById('reaktifasi_id_member').value;
 
+        // Elemen input untuk member baru di modal reaktivasi
+        const inputs2Reactivate = [
+            document.getElementById('inputNama2Reactivate'), 
+            document.getElementById('inputTelp2Reactivate'), 
+            document.getElementById('inputEmail2Reactivate')
+        ];
+        const radios2Reactivate = document.querySelectorAll('.group-radio-reactivate');
+
         if (isCouple) {
             coupleSection.classList.remove('hidden');
-            partnerInput.prop('required', true);
             partnerInput.find('option').prop('disabled', false);
             partnerInput.find('option[value="'+currentMemberId+'"]').prop('disabled', true);
             initSafeSelect2('#inputPartnerReactivate', '#modalReaktifasiMember');
+
+            // Logika untuk toggle required
+            partnerInput.off('change.couple').on('change.couple', function() {
+                if ($(this).val() !== '' && $(this).val() !== null) {
+                    inputs2Reactivate.forEach(el => { if(el) el.removeAttribute('required'); });
+                    radios2Reactivate.forEach(el => { if(el) el.removeAttribute('required'); });
+                } else {
+                    inputs2Reactivate.forEach(el => { if(el) el.setAttribute('required', true); });
+                    radios2Reactivate.forEach(el => { if(el) el.setAttribute('required', true); });
+                }
+            });
+            partnerInput.trigger('change.couple');
+
         } else {
             coupleSection.classList.add('hidden');
             partnerInput.prop('required', false);
@@ -349,6 +390,9 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 partnerInput.val('').trigger('change');
             }
+
+            inputs2Reactivate.forEach(el => { if(el) { el.removeAttribute('required'); el.value = ''; } });
+            radios2Reactivate.forEach(el => { if(el) { el.removeAttribute('required'); el.checked = false; } });
         }
 
         const todayStr = new Date().toISOString().split('T')[0];
@@ -455,9 +499,14 @@ document.addEventListener('DOMContentLoaded', function () {
             let jenisTxt = pay.jenis_transaksi || '-';
             let jenisLower = jenisTxt.toLowerCase();
 
-            if (jenisLower.includes('membership')) badgeClass = 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20';
-            else if (jenisLower.includes('renewal')) badgeClass = 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20';
-            else if (jenisLower.includes('reactivation')) badgeClass = 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20';
+            // Pengecekan disesuaikan untuk "registrasi", "perpanjang", "reaktivasi" berdasarkan arahan Controller Anda
+            if (jenisLower.includes('registrasi') || jenisLower.includes('membership')) {
+                badgeClass = 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20';
+            } else if (jenisLower.includes('perpanjang') || jenisLower.includes('renewal')) {
+                badgeClass = 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20';
+            } else if (jenisLower.includes('reaktivasi') || jenisLower.includes('reactivation')) {
+                badgeClass = 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20';
+            }
 
             let namaPaketHistory = '-';
             if (pay.nama_paket_snapshot) namaPaketHistory = pay.nama_paket_snapshot;

@@ -264,23 +264,30 @@
                     <div id="chartMemberGrowth" class="w-full"></div>
                 </div>
 
-                <!-- AKTIVITAS HARI INI -->
                 <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm h-full flex flex-col"
                     x-data="{ activeTab: 'all' }">
                     <h3 class="font-bold text-lg text-gray-800 mb-4">Aktivitas Hari Ini</h3>
 
                     <div class="flex gap-1 mb-4 overflow-x-auto pb-1 no-scrollbar">
                         <button @click="activeTab = 'all'"
-                            :class="activeTab === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-500'"
+                            :class="activeTab === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'"
                             class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap">Semua</button>
+
                         <button @click="activeTab = 'regis'"
-                            :class="activeTab === 'regis' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-500'"
+                            :class="activeTab === 'regis' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'"
                             class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap">Regis</button>
+
+                        {{-- Value tab diubah menjadi 'renew' agar sinkron dengan $activity['type'] == 'renew' --}}
                         <button @click="activeTab = 'renew'"
-                            :class="activeTab === 'renew' ? 'bg-green-600 text-white' : 'bg-gray-50 text-gray-500'"
-                            class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap">Renew</button>
+                            :class="activeTab === 'renew' ? 'bg-green-600 text-white shadow-md shadow-green-500/20' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'"
+                            class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap">Perpanjang</button>
+
+                        <button @click="activeTab = 'reaktivasi'"
+                            :class="activeTab === 'reaktivasi' ? 'bg-yellow-500 text-white shadow-md shadow-yellow-500/20' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'"
+                            class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap">Reaktivasi</button>
+
                         <button @click="activeTab = 'visit'"
-                            :class="activeTab === 'visit' ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-500'"
+                            :class="activeTab === 'visit' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'"
                             class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap">Absen</button>
                     </div>
 
@@ -288,25 +295,49 @@
                         @forelse($activities as $activity)
                             <div x-show="activeTab === 'all' || activeTab === '{{ $activity['type'] }}'"
                                 class="flex items-start gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 
-                                    {{ $activity['type'] == 'regis' ? 'bg-blue-100 text-blue-600' : '' }}
-                                    {{ $activity['type'] == 'renew' ? 'bg-green-100 text-green-600' : '' }}
-                                    {{ $activity['type'] == 'visit' ? 'bg-purple-100 text-purple-600' : '' }}">
-                                    @if($activity['type'] == 'regis') <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
+
+                                {{-- Penyesuaian background dan warna text icon berdasarkan tipe --}}
+                                <div
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 
+                            {{ $activity['type'] == 'regis' ? 'bg-blue-100 text-blue-600' : '' }}
+                            {{ $activity['type'] == 'renew' ? 'bg-green-100 text-green-600' : '' }}
+                            {{ $activity['type'] == 'reaktivasi' ? 'bg-yellow-100 text-yellow-600' : '' }}
+                            {{ $activity['type'] == 'visit' ? 'bg-purple-100 text-purple-600' : '' }}
+                            {{ !in_array($activity['type'], ['regis', 'renew', 'reaktivasi', 'visit']) ? 'bg-gray-100 text-gray-600' : '' }}">
+
+                                    @if($activity['type'] == 'regis')
+                                        {{-- Icon Add User (Registrasi Baru) --}}
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
                                             </path>
                                         </svg>
-                                    @elseif($activity['type'] == 'renew') <svg class="w-4 h-4" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
+                                    @elseif($activity['type'] == 'renew')
+                                        {{-- Icon Refresh / Sync (Perpanjang Masa Aktif) --}}
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                             </path>
                                         </svg>
-                                    @else <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    @elseif($activity['type'] == 'reaktivasi')
+                                        {{-- Icon Zap / Petir (Reaktivasi Akun) --}}
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 10V3L4 14h7v7l9-11h-7z">
+                                            </path>
+                                        </svg>
+                                    @elseif($activity['type'] == 'visit')
+                                        {{-- Icon Fingerprint (Absen / Check-in) --}}
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4">
+                                            </path>
+                                        </svg>
+                                    @else
+                                        {{-- Default Icon (Dokumen) --}}
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                             </path>
                                         </svg>
                                     @endif
@@ -352,11 +383,14 @@
                                     <tr class="hover:bg-gray-50 transition-colors">
                                         <td class="py-3 pl-2 font-bold text-gray-800">{{ $pending->invoice_code }}</td>
                                         <td class="py-3 text-xs font-medium text-gray-600">
-                                            {{ $pending->member->nama_lengkap ?? 'Guest' }}</td>
+                                            {{ $pending->member->nama_lengkap ?? 'Guest' }}
+                                        </td>
                                         <td class="py-3 text-right font-bold text-gray-800 text-xs">Rp
-                                            {{ number_format($pending->total_payment, 0, ',', '.') }}</td>
+                                            {{ number_format($pending->total_payment, 0, ',', '.') }}
+                                        </td>
                                         <td class="py-3 text-center text-[10px] text-gray-400">
-                                            {{ $pending->created_at->diffForHumans(null, true) }}</td>
+                                            {{ $pending->created_at->diffForHumans(null, true) }}
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>

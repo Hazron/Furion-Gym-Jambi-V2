@@ -107,7 +107,7 @@ class LaporanMembership extends Controller
             }
         }
 
-        return view('owner.laporanMembership', compact(
+        return view('Owner.LaporanMembership', compact(
             'laporanData',
             'countRegistrasi',
             'countRenewal',

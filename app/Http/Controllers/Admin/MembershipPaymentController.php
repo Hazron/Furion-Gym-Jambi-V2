@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\membershipPayment;
+use App\Models\MembershipPayment;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 

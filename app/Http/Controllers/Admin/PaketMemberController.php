@@ -10,6 +10,6 @@ class PaketMemberController extends Controller
 {
     public function index(){
         $paketMember = PaketMember::all(); 
-        return view('admin.PaketMember', compact('paketMember'));
+        return view('Admin.PaketMember', compact('paketMember'));
     }
 }

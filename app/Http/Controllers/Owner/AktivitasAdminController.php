@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 
 class AktivitasAdminController extends Controller
 {
-public function index(Request $request)
+    public function index(Request $request)
     {
         if ($request->ajax()) {
 
@@ -47,7 +47,7 @@ public function index(Request $request)
                 // Konkatenasi jam agar mencakup transaksi sepanjang hari penuh
                 $start = $startDate . ' 00:00:00';
                 $end = $endDate . ' 23:59:59';
-                
+
                 $ordersQuery->whereBetween('created_at', [$start, $end]);
                 $membershipQuery->whereBetween('created_at', [$start, $end]);
             }
@@ -106,8 +106,7 @@ public function index(Request $request)
 
         $admins = User::where('role', 'admin')->get();
 
-        // Kita tidak mengirim $activityDate lagi, cukup list Admin saja
-        return view('owner.aktivitasadmin', compact('admins'));
+        return view('Owner.AktivitasAdmin', compact('admins'));
     }
 
     public function getAktivitasDetail(Request $request)

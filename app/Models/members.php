@@ -39,9 +39,6 @@ class Members extends Model
 
     public function promo()
     {
-        // PERBAIKAN: Pastikan nama class Model-nya sesuai. 
-        // Idealnya di Laravel menggunakan PascalCase (PaketPromo).
-        // Jika nama file fisikmu paket_promo.php, ubah menjadi PaketPromo.php
         return $this->belongsTo(PaketPromo::class, 'promo_id', 'id_paket_promo'); 
     }
 
