@@ -9,7 +9,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('app:cek-member-masa-aktif')
-        ->dailyAt('07:00')
         ->timezone('Asia/Jakarta');
 
 Schedule::command('app:kirim-broadcast-member')

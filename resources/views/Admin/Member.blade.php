@@ -136,7 +136,6 @@
                                     placeholder="email@contoh.com" required>
                             </div>
                             
-                            {{-- PERBAIKAN GENDER TAMBAH UTAMA --}}
                             <div class="col-span-1 md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
                                 <div class="flex gap-4 mt-1">
@@ -188,7 +187,6 @@
                                     class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-pink-100 focus:border-pink-500">
                             </div>
                             
-                            {{-- PERBAIKAN GENDER TAMBAH PASANGAN --}}
                             <div class="col-span-1 md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
                                 <div class="flex gap-4 mt-1">
@@ -213,6 +211,7 @@
                                 <label class="block text-xs font-semibold text-blue-900 mb-1">Mulai Membership</label>
                                 <input type="date" name="tanggal_mulai" id="inputTanggalMulai"
                                     value="{{ old('tanggal_mulai', date('Y-m-d')) }}"
+                                    onchange="updateKalkulasiTambah()"
                                     class="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 text-gray-700"
                                     required>
                             </div>
@@ -352,7 +351,6 @@
                                     readonly>
                             </div>
                             
-                            {{-- PERBAIKAN GENDER EDIT --}}
                             <div class="col-span-1 md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
                                 <div class="flex gap-4 mt-1">
@@ -417,44 +415,53 @@
                     </div>
 
                     <div class="bg-green-50/50 rounded-2xl p-5 border border-green-100 mb-6">
-                        <h3 class="text-xs font-bold text-green-800 uppercase tracking-wider mb-4">Pilih Durasi Tambahan</h3>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-green-900 mb-1">Paket Perpanjangan</label>
-                            <select name="id_paket" id="selectPaketPerpanjang"
-                                class="w-full bg-white border border-green-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-200 focus:border-green-500 text-gray-700"
-                                required>
-                                <option value="" disabled selected>Pilih durasi paket...</option>
-                                <optgroup label="Paket Couple (2 Orang)">
-                                    @foreach ($paketCouple as $pc)
-                                        <option value="{{ $pc->id_paket }}" data-tipe="couple"
-                                            data-harga="{{ $pc->harga ?? 0 }}" data-durasi="{{ $pc->durasi }}">
-                                            {{ $pc->nama_paket }} ({{ $pc->durasi }})</option>
-                                    @endforeach
-                                </optgroup>
-                                <optgroup label="Paket Reguler">
-                                    @foreach ($paketReguler as $p)
-                                        <option value="{{ $p->id_paket }}" data-tipe="reguler" data-harga="{{ $p->harga ?? 0 }}"
-                                            data-durasi="{{ $p->durasi }}">{{ $p->nama_paket }} ({{ $p->durasi }})</option>
-                                    @endforeach
-                                </optgroup>
-                                <optgroup label="Paket Promo">
-                                    @foreach ($paketPromo as $pp)
-                                        <option value="{{ $pp->id_paket }}" data-tipe="promo" data-harga="{{ $pp->harga ?? 0 }}"
-                                            data-durasi="{{ $pp->durasi }}">{{ $pp->nama_promo ?? $pp->nama_paket }}
-                                            ({{ $pp->durasi }}) - PROMO</option>
-                                    @endforeach
-                                </optgroup>
-                                <optgroup label="Paket Promo Couple">
-                                    @foreach ($paketPromoCouple as $ppc)
-                                        <option value="{{ $ppc->id_paket }}" data-tipe="promo couple"
-                                            data-harga="{{ $ppc->harga }}" data-durasi="{{ $ppc->durasi }}">
-                                            {{ $ppc->nama_paket }} ({{ $ppc->durasi }}) - PROMO COUPLE</option>
-                                    @endforeach
-                                </optgroup>
-                            </select>
+                        <h3 class="text-xs font-bold text-green-800 uppercase tracking-wider mb-4">Pengaturan Perpanjangan</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-green-900 mb-1">Mulai Perpanjangan</label>
+                                <input type="date" name="tanggal_mulai" id="inputTanggalMulaiPerpanjang" 
+                                    onchange="updatePerpanjangSummary()"
+                                    class="w-full bg-white border border-green-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-200 focus:border-green-500 text-gray-700" required>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-green-900 mb-1">Paket Perpanjangan</label>
+                                <select name="id_paket" id="selectPaketPerpanjang" onchange="updatePerpanjangSummary()"
+                                    class="w-full bg-white border border-green-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-200 focus:border-green-500 text-gray-700"
+                                    required>
+                                    <option value="" disabled selected>Pilih durasi paket...</option>
+                                    <optgroup label="Paket Couple (2 Orang)">
+                                        @foreach ($paketCouple as $pc)
+                                            <option value="{{ $pc->id_paket }}" data-tipe="couple"
+                                                data-harga="{{ $pc->harga ?? 0 }}" data-durasi="{{ $pc->durasi }}">
+                                                {{ $pc->nama_paket }} ({{ $pc->durasi }})</option>
+                                        @endforeach
+                                    </optgroup>
+                                    <optgroup label="Paket Reguler">
+                                        @foreach ($paketReguler as $p)
+                                            <option value="{{ $p->id_paket }}" data-tipe="reguler" data-harga="{{ $p->harga ?? 0 }}"
+                                                data-durasi="{{ $p->durasi }}">{{ $p->nama_paket }} ({{ $p->durasi }})</option>
+                                        @endforeach
+                                    </optgroup>
+                                    <optgroup label="Paket Promo">
+                                        @foreach ($paketPromo as $pp)
+                                            <option value="{{ $pp->id_paket }}" data-tipe="promo" data-harga="{{ $pp->harga ?? 0 }}"
+                                                data-durasi="{{ $pp->durasi }}">{{ $pp->nama_promo ?? $pp->nama_paket }}
+                                                ({{ $pp->durasi }}) - PROMO</option>
+                                        @endforeach
+                                    </optgroup>
+                                    <optgroup label="Paket Promo Couple">
+                                        @foreach ($paketPromoCouple as $ppc)
+                                            <option value="{{ $ppc->id_paket }}" data-tipe="promo couple"
+                                                data-harga="{{ $ppc->harga }}" data-durasi="{{ $ppc->durasi }}">
+                                                {{ $ppc->nama_paket }} ({{ $ppc->durasi }}) - PROMO COUPLE</option>
+                                        @endforeach
+                                    </optgroup>
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- PERBAIKAN GENDER & UI COUPLE PERPANJANG --}}
                         <div id="renewCoupleSection" class="hidden mt-6 mb-4 bg-white p-5 rounded-2xl border border-green-200 shadow-sm">
                             <h3 class="text-xs font-bold text-green-700 uppercase tracking-wider mb-4">Informasi Pasangan (Couple)</h3>
                             
@@ -506,8 +513,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <input type="date" name="tanggal_mulai" id="inputTanggalMulaiPerpanjang" class="hidden">
 
                         <div class="bg-white rounded-xl p-4 border border-green-100 shadow-sm mt-4">
                             <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Ringkasan Pembayaran</h3>
@@ -600,42 +605,52 @@
                     </div>
 
                     <div class="bg-yellow-50/50 rounded-2xl p-5 border border-yellow-100 mb-6">
-                        <h3 class="text-xs font-bold text-yellow-800 uppercase tracking-wider mb-4">Pilih Paket Baru (Mulai Hari Ini)</h3>
-                        <label class="block text-sm font-medium text-yellow-900 mb-1">Paket Membership</label>
-                        <select name="paket_id" id="selectPaketReaktifasi"
-                            class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-200 focus:border-yellow-500 text-gray-700"
-                            required>
-                            <option value="" disabled selected>Pilih paket re-aktifasi...</option>
-                            <optgroup label="Paket Couple">
-                                @foreach ($paketCouple as $pc)
-                                    <option value="{{ $pc->id_paket }}" data-tipe="couple" data-harga="{{ $pc->harga ?? 0 }}"
-                                        data-durasi="{{ $pc->durasi }}">{{ $pc->nama_paket }} ({{ $pc->durasi }})</option>
-                                @endforeach
-                            </optgroup>
-                            <optgroup label="Paket Reguler">
-                                @foreach ($paketReguler as $p)
-                                    <option value="{{ $p->id_paket }}" data-tipe="reguler" data-harga="{{ $p->harga ?? 0 }}"
-                                        data-durasi="{{ $p->durasi }}">{{ $p->nama_paket }} ({{ $p->durasi }})</option>
-                                @endforeach
-                            </optgroup>
-                            <optgroup label="Paket Promo">
-                                @foreach ($paketPromo as $pp)
-                                    <option value="{{ $pp->id_paket }}" data-tipe="promo" data-harga="{{ $pp->harga ?? 0 }}"
-                                        data-durasi="{{ $pp->durasi }}">{{ $pp->nama_promo ?? $pp->nama_paket }}
-                                        ({{ $pp->durasi }}) - PROMO</option>
-                                @endforeach
-                            </optgroup>
-                            <optgroup label="Paket Promo Couple">
-                                @foreach ($paketPromoCouple as $ppc)
-                                    <option value="{{ $ppc->id_paket }}" data-tipe="promo couple" data-harga="{{ $ppc->harga }}"
-                                        data-durasi="{{ $ppc->durasi }}">{{ $ppc->nama_paket }} ({{ $ppc->durasi }}) - PROMO
-                                        COUPLE</option>
-                                @endforeach
-                            </optgroup>
-                        </select>
+                        <h3 class="text-xs font-bold text-yellow-800 uppercase tracking-wider mb-4">Pengaturan Aktivasi Baru</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-yellow-900 mb-1">Tanggal Mulai Baru</label>
+                                <input type="date" name="tanggal_mulai" id="inputTanggalMulaiReaktifasi" 
+                                    value="{{ date('Y-m-d') }}" onchange="updateReaktifasiSummary()"
+                                    class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-200 focus:border-yellow-500 text-gray-700" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-yellow-900 mb-1">Paket Membership</label>
+                                <select name="paket_id" id="selectPaketReaktifasi" onchange="updateReaktifasiSummary()"
+                                    class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-200 focus:border-yellow-500 text-gray-700"
+                                    required>
+                                    <option value="" disabled selected>Pilih paket re-aktifasi...</option>
+                                    <optgroup label="Paket Couple">
+                                        @foreach ($paketCouple as $pc)
+                                            <option value="{{ $pc->id_paket }}" data-tipe="couple" data-harga="{{ $pc->harga ?? 0 }}"
+                                                data-durasi="{{ $pc->durasi }}">{{ $pc->nama_paket }} ({{ $pc->durasi }})</option>
+                                        @endforeach
+                                    </optgroup>
+                                    <optgroup label="Paket Reguler">
+                                        @foreach ($paketReguler as $p)
+                                            <option value="{{ $p->id_paket }}" data-tipe="reguler" data-harga="{{ $p->harga ?? 0 }}"
+                                                data-durasi="{{ $p->durasi }}">{{ $p->nama_paket }} ({{ $p->durasi }})</option>
+                                        @endforeach
+                                    </optgroup>
+                                    <optgroup label="Paket Promo">
+                                        @foreach ($paketPromo as $pp)
+                                            <option value="{{ $pp->id_paket }}" data-tipe="promo" data-harga="{{ $pp->harga ?? 0 }}"
+                                                data-durasi="{{ $pp->durasi }}">{{ $pp->nama_promo ?? $pp->nama_paket }}
+                                                ({{ $pp->durasi }}) - PROMO</option>
+                                        @endforeach
+                                    </optgroup>
+                                    <optgroup label="Paket Promo Couple">
+                                        @foreach ($paketPromoCouple as $ppc)
+                                            <option value="{{ $ppc->id_paket }}" data-tipe="promo couple" data-harga="{{ $ppc->harga }}"
+                                                data-durasi="{{ $ppc->durasi }}">{{ $ppc->nama_paket }} ({{ $ppc->durasi }}) - PROMO
+                                                COUPLE</option>
+                                        @endforeach
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
                         <input type="hidden" name="tipe_paket" id="inputTipePaketReaktifasi">
 
-                        {{-- PERBAIKAN GENDER & UI COUPLE REAKTIVASI --}}
                         <div id="reactivateCoupleSection" class="hidden mt-6 mb-4 bg-white p-5 rounded-2xl border border-yellow-200 shadow-sm">
                             <h3 class="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-4">Informasi Pasangan (Couple)</h3>
                             
@@ -692,13 +707,11 @@
                             <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Ringkasan Pembayaran</h3>
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm text-gray-500">Tanggal Mulai Baru</span>
-                                <span id="display_tanggal_mulai_baru"
-                                    class="text-sm font-medium text-gray-800">{{ date('d M Y') }}</span>
+                                <span id="display_tanggal_mulai_reaktifasi" class="text-sm font-medium text-gray-800">-</span>
                             </div>
                             <div class="flex justify-between items-center mb-3 border-b border-dashed pb-3">
                                 <span class="text-sm text-gray-500">Tanggal Selesai Baru</span>
-                                <span id="display_tanggal_selesai_reaktifasi"
-                                    class="text-sm font-bold text-yellow-600">-</span>
+                                <span id="display_tanggal_selesai_reaktifasi" class="text-sm font-bold text-yellow-600">-</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-lg font-bold text-gray-700">Total Tagihan</span>
@@ -887,28 +900,14 @@
     {{-- Library Select2 --}}
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
+    {{-- DEKLARASI GLOBAL VARIABLE UNTUK ROUTE (Agar bisa dibaca oleh file JS eksternal) --}}
     <script>
         window.routeDataMember = "{{ route('member.data') }}";
         window.routeMemberUpdate = "{{ route('member.update', ':id') }}";
         window.routeMemberPerpanjang = "{{ route('member.perpanjang', 'ID_MEMBER_PLACEHOLDER') }}";
         window.routeMembershipReactivate = "{{ route('membership.reactivate', ':id') }}";
-
-        // FUNGSI JAVASCRIPT UNTUK TOGGLE PASSWORD OWNER (SKIP INVOICE)
-        function toggleOwnerPassword(checkbox, fieldId) {
-            const field = document.getElementById(fieldId);
-            const inputField = field.querySelector('input[type="password"]');
-
-            if (checkbox.checked) {
-                field.classList.remove('hidden');
-                inputField.setAttribute('required', 'required');
-            } else {
-                field.classList.add('hidden');
-                inputField.removeAttribute('required');
-                inputField.value = ''; 
-            }
-        }
     </script>
 
-    {{-- File Custom JS --}}
+    {{-- File Custom JS Utama --}}
     @vite('resources/js/Admin/Member.js')
 @endpush

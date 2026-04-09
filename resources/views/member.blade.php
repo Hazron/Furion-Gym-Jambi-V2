@@ -144,13 +144,24 @@
                 <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mt-1">Halo, <span
                         class="text-brand-blue">{{ $member->nama_lengkap }}</span> 👋</h1>
             </div>
-            <div class="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-3">
-                <div class="text-right">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold">ID Member</p>
-                    <p class="font-mono font-bold text-lg text-slate-800 tracking-wider">{{ $member->id_members }}</p>
-                </div>
-                <div class="bg-blue-50 p-2 rounded text-brand-blue">
-                    <i data-lucide="qr-code" class="w-6 h-6"></i>
+
+            <div class="flex flex-col-reverse sm:flex-row items-end sm:items-center gap-3">
+
+                <button onclick="openHistoryModal()"
+                    class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-600 px-4 py-3 sm:py-2.5 rounded-lg border border-slate-200 shadow-sm transition-all font-bold text-sm hover:border-blue-200 hover:text-brand-blue active:scale-95">
+                    <i data-lucide="receipt" class="w-4 h-4"></i>
+                    <span>Riwayat Transaksi</span>
+                </button>
+
+                <div class="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-3">
+                    <div class="text-right">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold">ID Member</p>
+                        <p class="font-mono font-bold text-lg text-slate-800 tracking-wider">{{ $member->id_members }}
+                        </p>
+                    </div>
+                    <div class="bg-blue-50 p-2 rounded text-brand-blue">
+                        <i data-lucide="qr-code" class="w-6 h-6"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -285,7 +296,7 @@
                             @php $isTrained = in_array($day, $trainingDates); @endphp
                             <div
                                 class="aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition duration-300 relative group cursor-default
-                                                    {{ $isTrained ? 'bg-green-500 text-white shadow-md shadow-green-200 scale-105' : 'bg-slate-50 text-slate-300' }}">
+                                                            {{ $isTrained ? 'bg-green-500 text-white shadow-md shadow-green-200 scale-105' : 'bg-slate-50 text-slate-300' }}">
                                 {{ $day }}
                             </div>
                         @endfor
@@ -449,7 +460,138 @@
         <div class="story-content" id="storyLayout">
         </div>
     </div>
-    
+
+    {{-- MODAL RIWAYAT TRANSAKSI --}}
+    <div id="historyModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
+
+        {{-- Backdrop --}}
+        <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity opacity-0 cursor-pointer"
+            id="historyBackdrop" onclick="closeHistoryModal()"></div>
+
+        <div class="fixed inset-0 z-[101] overflow-y-auto pointer-events-none">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+
+                {{-- Modal Panel --}}
+                <div id="historyPanel"
+                    class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all opacity-0 scale-95 w-full sm:max-w-xl pointer-events-auto flex flex-col max-h-[85vh]">
+
+                    {{-- Header Modal --}}
+                    <div
+                        class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <div class="bg-blue-100 p-1.5 rounded-lg">
+                                <i data-lucide="receipt" class="w-5 h-5 text-brand-blue"></i>
+                            </div>
+                            Riwayat Transaksi
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            {{-- TOMBOL DOWNLOAD PDF --}}
+                            <a href="{{ route('member.riwayat.pdf', $member->id_members) }}" target="_blank"
+                                class="flex items-center gap-1.5 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg transition-colors text-xs font-bold border border-red-100 hover:border-red-500">
+                                <i data-lucide="file-down" class="w-4 h-4"></i>
+                                <span class="hidden sm:inline">Download PDF</span>
+                                <span class="sm:hidden">PDF</span>
+                            </a>
+
+                            <button onclick="closeHistoryModal()"
+                                class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                                <i data-lucide="x" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Body/Isi Modal (Scrollable) --}}
+                    <div class="p-6 overflow-y-auto bg-white flex-1 custom-scrollbar">
+                        <div class="space-y-4">
+
+                            @forelse($riwayatTransaksi as $transaksi)
+                                @php
+                                    // Dynamic Styling based on Transaction Type
+                                    $jenis = strtolower($transaksi->jenis_transaksi);
+                                    if ($jenis == 'membership') {
+                                        $badgeBg = 'bg-indigo-50';
+                                        $badgeText = 'text-indigo-600';
+                                        $labelJenis = 'Pendaftaran';
+                                    } elseif ($jenis == 'renewal') {
+                                        $badgeBg = 'bg-green-50';
+                                        $badgeText = 'text-green-600';
+                                        $labelJenis = 'Perpanjangan';
+                                    } elseif ($jenis == 'reactivation') {
+                                        $badgeBg = 'bg-orange-50';
+                                        $badgeText = 'text-orange-600';
+                                        $labelJenis = 'Reaktivasi';
+                                    } else {
+                                        $badgeBg = 'bg-blue-50';
+                                        $badgeText = 'text-brand-blue';
+                                        $labelJenis = $transaksi->jenis_transaksi;
+                                    }
+
+                                    $harga = $transaksi->nominal ?? ($transaksi->total_pembayaran ?? 0);
+                                @endphp
+
+                                <div
+                                    class="border border-slate-100 rounded-xl p-4 hover:border-blue-200 hover:shadow-md transition-all group">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <span
+                                                class="inline-block {{ $badgeBg }} {{ $badgeText }} text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1.5">
+                                                {{ $labelJenis }}
+                                            </span>
+                                            <h4
+                                                class="font-bold text-slate-800 text-sm group-hover:text-brand-blue transition-colors">
+                                                {{ $transaksi->nama_paket_snapshot ?? ($transaksi->paket->nama_paket ?? 'Paket Kustom') }}
+                                            </h4>
+                                        </div>
+
+                                        {{-- BAGIAN YANG DIUBAH: Harga + Tombol Struk --}}
+                                        <div class="flex flex-col items-end gap-1.5 shrink-0">
+                                            <span class="text-brand-blue font-black text-sm">Rp
+                                                {{ number_format($harga, 0, ',', '.') }}</span>
+                                            <a href="{{ route('member.transaksi.pdf', $transaksi->id) }}" target="_blank"
+                                                class="inline-flex items-center gap-1 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white px-2 py-1 rounded text-[10px] font-bold border border-red-100 hover:border-red-500 transition-colors"
+                                                title="Download Struk">
+                                                <i data-lucide="printer" class="w-3 h-3"></i> Cetak Struk
+                                            </a>
+                                        </div>
+                                        {{-- END BAGIAN YANG DIUBAH --}}
+
+                                    </div>
+                                    <div
+                                        class="flex justify-between items-center text-xs text-slate-500 border-t border-slate-50 pt-3 mt-1">
+                                        <div class="flex items-center gap-1.5 font-medium">
+                                            <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-slate-400"></i>
+                                            {{ \Carbon\Carbon::parse($transaksi->tanggal_transaksi)->translatedFormat('d F Y') }}
+                                        </div>
+                                        <span
+                                            class="bg-green-100 text-green-700 px-2.5 py-1 rounded-md font-bold text-[10px] flex items-center gap-1">
+                                            <i data-lucide="check-circle" class="w-3 h-3"></i> LUNAS
+                                        </span>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-center py-8">
+                                    <div
+                                        class="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <i data-lucide="receipt" class="w-8 h-8 text-slate-300"></i>
+                                    </div>
+                                    <h4 class="text-slate-500 font-medium text-sm">Belum ada riwayat transaksi.</h4>
+                                </div>
+                            @endforelse
+
+                        </div>
+                    </div>
+
+                    {{-- Footer Modal --}}
+                    <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end shrink-0">
+                        <button onclick="closeHistoryModal()"
+                            class="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 active:scale-95 transition-all">Tutup</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         lucide.createIcons();
 
@@ -553,6 +695,41 @@
                 successOverlay.classList.add('hidden');
                 successOverlay.classList.remove('flex');
             }, 200);
+        };
+
+        // FUNGSI UNTUK MODAL RIWAYAT TRANSAKSI
+        window.openHistoryModal = function () {
+            const modal = document.getElementById('historyModal');
+            const backdrop = document.getElementById('historyBackdrop');
+            const panel = document.getElementById('historyPanel');
+
+            if (modal) {
+                modal.classList.remove('hidden');
+                // Trigger re-render icons inside modal just in case
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    panel.classList.remove('opacity-0', 'scale-95');
+                    panel.classList.add('opacity-100', 'scale-100');
+                }, 10);
+            }
+        };
+
+        window.closeHistoryModal = function () {
+            const modal = document.getElementById('historyModal');
+            const backdrop = document.getElementById('historyBackdrop');
+            const panel = document.getElementById('historyPanel');
+
+            if (modal) {
+                backdrop.classList.add('opacity-0');
+                panel.classList.remove('opacity-100', 'scale-100');
+                panel.classList.add('opacity-0', 'scale-95');
+
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
         };
     </script>
 </body>

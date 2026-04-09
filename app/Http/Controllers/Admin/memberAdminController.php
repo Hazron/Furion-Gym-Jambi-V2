@@ -68,6 +68,7 @@ class MemberAdminController extends Controller
 
             $isCouple = (in_array($paket->jenis, ['couple', 'promo couple']) || stripos($namaPaket, 'couple') !== false);
 
+            // Perhitungan Tanggal Selesai berdasarkan Tanggal Mulai
             $tanggalMulai = Carbon::parse($request->tanggal_mulai);
             $tanggalSelesai = $tanggalMulai->copy();
 
@@ -160,7 +161,10 @@ class MemberAdminController extends Controller
             $prefixInvoice = $skipInvoice ? 'BYP/FRN/' : 'INV/FRN/';
             $nomorInvoice = $prefixInvoice . now()->format('dmY') . '/' . strtoupper(Str::random(4));
 
-            $keterangan = (str_contains(strtolower($paket->jenis), 'promo') ? 'Promo: ' : 'Reguler: ') . $namaPaket;
+            // PEMBUATAN KETERANGAN LENGKAP
+            $periodeText = ' (' . $tanggalMulai->format('d M Y') . ' - ' . $tanggalSelesai->format('d M Y') . ')';
+            $keterangan = (str_contains(strtolower($paket->jenis), 'promo') ? 'Promo: ' : 'Reguler: ') . $namaPaket . $periodeText;
+            
             if ($isCouple) {
                 $keterangan .= $namaPartnerStr;
             }
@@ -168,11 +172,11 @@ class MemberAdminController extends Controller
             if ($skipInvoice) {
                 $metodePembayaran = 'bypass';
                 $nominalBayar = 0;
-                $keterangan .= ' - BYPASS OWNER (Tanpa Bayar)';
+                $keterangan .= ' [BYPASS OWNER]';
             } else {
                 $metodePembayaran = $buktiPath ? 'transfer' : 'cash';
                 $nominalBayar = $hargaPaket;
-                $keterangan .= ($buktiPath ? ' - Transfer' : ' - Tunai');
+                $keterangan .= ($buktiPath ? ' [Transfer]' : ' [Tunai]');
             }
 
             $payment = MembershipPayment::create([
@@ -404,6 +408,7 @@ class MemberAdminController extends Controller
         try {
             $request->validate([
                 'id_paket' => 'required|exists:paket_members,id_paket',
+                'tanggal_mulai' => 'required|date', // Validasi input tanggal_mulai
                 'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
             ]);
 
@@ -430,27 +435,19 @@ class MemberAdminController extends Controller
                 }
             }
 
-            $hitungTanggalBaru = function ($tanggalSelesaiLama, $durasiPaket) {
-                $now = Carbon::now();
-                $baseDate = $now;
+            // PERHITUNGAN TANGGAL SELESAI BARU (Berdasarkan Input Tanggal Mulai)
+            $tanggalMulai = Carbon::parse($request->tanggal_mulai);
+            $angka = (int) filter_var($paket->durasi, FILTER_SANITIZE_NUMBER_INT);
+            $durasiStr = strtolower($paket->durasi);
+            $tanggalSelesaiBaruMember = $tanggalMulai->copy();
 
-                if ($tanggalSelesaiLama && Carbon::parse($tanggalSelesaiLama)->greaterThan($now)) {
-                    $baseDate = Carbon::parse($tanggalSelesaiLama);
-                }
-
-                $angka = (int) filter_var($durasiPaket, FILTER_SANITIZE_NUMBER_INT);
-                $durasiStr = strtolower($durasiPaket);
-                $newDate = $baseDate->copy();
-
-                if (str_contains($durasiStr, 'tahun'))
-                    $newDate->addYears($angka);
-                elseif (str_contains($durasiStr, 'hari'))
-                    $newDate->addDays($angka);
-                else
-                    $newDate->addMonths($angka);
-
-                return $newDate;
-            };
+            if (str_contains($durasiStr, 'tahun')) {
+                $tanggalSelesaiBaruMember->addYears($angka);
+            } elseif (str_contains($durasiStr, 'hari')) {
+                $tanggalSelesaiBaruMember->addDays($angka);
+            } else {
+                $tanggalSelesaiBaruMember->addMonths($angka);
+            }
 
             $generateId = function () {
                 do {
@@ -460,7 +457,6 @@ class MemberAdminController extends Controller
             };
 
             // UPDATE MEMBER UTAMA
-            $tanggalSelesaiBaruMember = $hitungTanggalBaru($member->tanggal_selesai, $paket->durasi);
             $updateDataMember = [
                 'paket_id' => $paket->id_paket,
                 'tanggal_selesai' => $tanggalSelesaiBaruMember,
@@ -472,11 +468,10 @@ class MemberAdminController extends Controller
             if ($isCouple) {
                 if ($request->filled('partner_id')) {
                     $partner = Members::findOrFail($request->partner_id);
-                    $tanggalSelesaiBaruPartner = $hitungTanggalBaru($partner->tanggal_selesai, $paket->durasi);
 
                     $partner->update([
                         'paket_id' => $paket->id_paket,
-                        'tanggal_selesai' => $tanggalSelesaiBaruPartner,
+                        'tanggal_selesai' => $tanggalSelesaiBaruMember, // Selesai sama dengan member utama
                         'status' => 'active',
                         'partner_id' => $member->id_members,
                     ]);
@@ -493,8 +488,8 @@ class MemberAdminController extends Controller
                         'no_telepon' => $request->nomor_telepon_2,
                         'email' => $request->email_2,
                         'jenis_kelamin' => $request->jenis_kelamin_2,
-                        'tanggal_daftar' => now(), // Join hari ini
-                        'tanggal_selesai' => $tanggalSelesaiBaruMember, // Ikut tanggal selesai utama
+                        'tanggal_daftar' => $tanggalMulai, 
+                        'tanggal_selesai' => $tanggalSelesaiBaruMember, 
                         'paket_id' => $paket->id_paket,
                         'status' => 'active',
                         'partner_id' => $member->id_members,
@@ -516,24 +511,30 @@ class MemberAdminController extends Controller
             $prefixInvoice = $skipInvoice ? 'BYP-REN-' : 'INV-REN-';
             $nomorInvoice = $prefixInvoice . strtoupper(Str::random(6)) . '-' . now()->format('dmYHis');
 
-            $keterangan = 'Perpanjang: ' . $paket->nama_paket . $namaPartner;
+            // PEMBUATAN KETERANGAN LENGKAP
+            $periodeText = ' (' . $tanggalMulai->format('d M Y') . ' - ' . $tanggalSelesaiBaruMember->format('d M Y') . ')';
+            $keterangan = 'Perpanjang: ' . $paket->nama_paket . $periodeText;
+            
+            if ($isCouple) {
+                $keterangan .= $namaPartner;
+            }
 
             if ($skipInvoice) {
                 $metodePembayaran = 'bypass';
                 $nominalBayar = 0;
-                $keterangan .= ' - BYPASS OWNER';
+                $keterangan .= ' [BYPASS OWNER]';
             } else {
                 $metodePembayaran = $buktiPath ? 'transfer' : 'cash';
                 $nominalBayar = $paket->harga ?? 0;
-                $keterangan .= ($buktiPath ? ' (Transfer)' : ' (Tunai)');
+                $keterangan .= ($buktiPath ? ' [Transfer]' : ' [Tunai]');
             }
 
             $payment = MembershipPayment::create([
                 'member_id' => $member->id_members,
                 'paket_id' => $paket->id_paket,
-                'jenis_transaksi' => 'perpanjang', // Sesuai instruksi User Correct History
+                'jenis_transaksi' => 'perpanjang', 
                 'nomor_invoice' => $nomorInvoice,
-                'tanggal_transaksi' => now(),
+                'tanggal_transaksi' => now(), // Tanggal transaksi tetap hari ini (pembayaran dilakukan)
                 'metode_pembayaran' => $metodePembayaran,
                 'nominal' => $nominalBayar,
                 'status_pembayaran' => 'completed',
@@ -557,6 +558,7 @@ class MemberAdminController extends Controller
                         "--------------------------------\n" .
                         "🧾 Invoice: {$nomorInvoice}\n" .
                         "📦 Paket: {$paket->nama_paket}\n" .
+                        "📆 Mulai Aktif: " . $tanggalMulai->format('d M Y') . "\n" .
                         "📅 Aktif Sampai: " . $tanggalSelesaiBaruMember->format('d M Y') . "\n" .
                         "💰 Total: Rp " . number_format($payment->nominal, 0, ',', '.') . "\n";
 
@@ -609,6 +611,7 @@ class MemberAdminController extends Controller
         try {
             $request->validate([
                 'paket_id' => 'required|exists:paket_members,id_paket',
+                'tanggal_mulai' => 'required|date', // Validasi input tanggal_mulai
                 'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
             ]);
 
@@ -635,17 +638,19 @@ class MemberAdminController extends Controller
                 }
             }
 
-            $tanggalMulai = Carbon::now();
+            // PERHITUNGAN TANGGAL SELESAI BARU (Berdasarkan Input Tanggal Mulai)
+            $tanggalMulai = Carbon::parse($request->tanggal_mulai);
             $angka = (int) filter_var($paket->durasi, FILTER_SANITIZE_NUMBER_INT);
             $durasiStr = strtolower($paket->durasi);
             $tanggalSelesai = $tanggalMulai->copy();
 
-            if (str_contains($durasiStr, 'tahun'))
+            if (str_contains($durasiStr, 'tahun')) {
                 $tanggalSelesai->addYears($angka);
-            elseif (str_contains($durasiStr, 'hari'))
+            } elseif (str_contains($durasiStr, 'hari')) {
                 $tanggalSelesai->addDays($angka);
-            else
+            } else {
                 $tanggalSelesai->addMonths($angka);
+            }
 
             $generateId = function () {
                 do {
@@ -654,9 +659,10 @@ class MemberAdminController extends Controller
                 return $newId;
             };
 
-            // UPDATE MEMBER UTAMA
+            // UPDATE MEMBER UTAMA (Tanggal Daftar juga diperbarui ke tanggal reaktivasi)
             $updateDataMember = [
                 'paket_id' => $paket->id_paket,
+                'tanggal_daftar' => $tanggalMulai, // Reset tanggal bergabung ke tanggal reaktivasi ini
                 'tanggal_selesai' => $tanggalSelesai,
                 'status' => 'active',
             ];
@@ -668,6 +674,7 @@ class MemberAdminController extends Controller
                     $partner = Members::findOrFail($request->partner_id);
                     $partner->update([
                         'paket_id' => $paket->id_paket,
+                        'tanggal_daftar' => $tanggalMulai, 
                         'tanggal_selesai' => $tanggalSelesai,
                         'status' => 'active',
                         'partner_id' => $member->id_members,
@@ -684,8 +691,8 @@ class MemberAdminController extends Controller
                         'no_telepon' => $request->nomor_telepon_2,
                         'email' => $request->email_2,
                         'jenis_kelamin' => $request->jenis_kelamin_2,
-                        'tanggal_daftar' => now(), // Join hari ini
-                        'tanggal_selesai' => $tanggalSelesai, // Ikut tanggal selesai utama
+                        'tanggal_daftar' => $tanggalMulai,
+                        'tanggal_selesai' => $tanggalSelesai,
                         'paket_id' => $paket->id_paket,
                         'status' => 'active',
                         'partner_id' => $member->id_members,
@@ -707,24 +714,30 @@ class MemberAdminController extends Controller
             $prefixInvoice = $skipInvoice ? 'BYP-RCT-' : 'INV-RCT-';
             $nomorInvoice = $prefixInvoice . strtoupper(Str::random(6)) . '-' . now()->format('dmYHis');
 
-            $keterangan = 'Re-aktifasi: ' . $paket->nama_paket . $namaPartner;
+            // PEMBUATAN KETERANGAN LENGKAP
+            $periodeText = ' (' . $tanggalMulai->format('d M Y') . ' - ' . $tanggalSelesai->format('d M Y') . ')';
+            $keterangan = 'Re-aktifasi: ' . $paket->nama_paket . $periodeText;
+
+            if ($isCouple) {
+                $keterangan .= $namaPartner;
+            }
 
             if ($skipInvoice) {
                 $metodePembayaran = 'bypass';
                 $nominalBayar = 0;
-                $keterangan .= ' - BYPASS OWNER';
+                $keterangan .= ' [BYPASS OWNER]';
             } else {
                 $metodePembayaran = $buktiPath ? 'transfer' : 'cash';
                 $nominalBayar = $paket->harga ?? 0;
-                $keterangan .= ($buktiPath ? ' (Transfer)' : ' (Tunai)');
+                $keterangan .= ($buktiPath ? ' [Transfer]' : ' [Tunai]');
             }
 
             $payment = MembershipPayment::create([
                 'member_id' => $member->id_members,
                 'paket_id' => $paket->id_paket,
-                'jenis_transaksi' => 'reaktivasi', // Sesuai instruksi User Correct History
+                'jenis_transaksi' => 'reaktivasi',
                 'nomor_invoice' => $nomorInvoice,
-                'tanggal_transaksi' => now(),
+                'tanggal_transaksi' => now(), // Transaksi tetap tercatat hari ini
                 'metode_pembayaran' => $metodePembayaran,
                 'nominal' => $nominalBayar,
                 'status_pembayaran' => 'completed',
@@ -748,6 +761,7 @@ class MemberAdminController extends Controller
                         "--------------------------------\n" .
                         "🧾 Invoice: {$nomorInvoice}\n" .
                         "📦 Paket: {$paket->nama_paket}\n" .
+                        "📆 Mulai Aktif: " . $tanggalMulai->format('d M Y') . "\n" .
                         "📅 Aktif Sampai: " . $tanggalSelesai->format('d M Y') . "\n" .
                         "💰 Total Bayar: Rp " . number_format($payment->nominal, 0, ',', '.') . "\n";
 

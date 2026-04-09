@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\members; // Sesuai nama class model kamu
-use App\Models\absen;   // Sesuai nama class model kamu
+use App\Models\Members; 
+use App\Models\Absen;   
+use App\Models\MembershipPayment;
 use Carbon\Carbon;
 use Spatie\Browsershot\Browsershot;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -60,28 +61,24 @@ class memberDashboardController extends Controller
         // Ambil level dari database, default ke 'beginner' jika kosong
         $level = $member->target_latihan ?? 'beginner';
 
-        // Tentukan jumlah target berdasarkan level
         switch ($level) {
             case 'advance':
-                $targetSessions = 20; // 5x seminggu
+                $targetSessions = 20; 
                 $levelLabel = "Advance";
                 break;
             case 'intermediate':
-                $targetSessions = 16; // 4x seminggu
+                $targetSessions = 16;
                 $levelLabel = "Intermediate";
                 break;
             case 'beginner':
             default:
-                $targetSessions = 12; // 3x seminggu
+                $targetSessions = 12;
                 $levelLabel = "Beginner";
                 break;
         }
 
         // 7. Hitung Persentase Konsistensi
-        // $progressPercent: Untuk lebar CSS Bar (maksimal 100% agar tidak bocor layout)
         $progressPercent = ($targetSessions > 0) ? min(($totalSessions / $targetSessions) * 100, 100) : 0;
-
-        // $displayPercent: Untuk teks angka (bisa lebih dari 100% sebagai apresiasi)
         $displayPercent = ($targetSessions > 0) ? round(($totalSessions / $targetSessions) * 100) : 0;
 
         // 8. Generate Feedback Cerdas
@@ -99,26 +96,36 @@ class memberDashboardController extends Controller
             $feedbackColor = "bg-red-500";
         }
 
-        // 9. Return View
+        // 9. AMBIL RIWAYAT TRANSAKSI (BARU)
+        // Pastikan nama kolom relasi ('member_id') sesuai dengan yang ada di tabel membership_payments kamu
+        $riwayatTransaksi = MembershipPayment::with('paket')
+            ->where('member_id', $member->id_members)
+            ->orderBy('tanggal_transaksi', 'desc')
+            ->get();
+
+        // 10. Return View
         return view('member', compact(
             'member',
             'monthlyAttendances',
             'trainingDates',
             'totalSessions',
-            'targetSessions', // Variabel Baru
-            'level',          // Variabel Baru
+            'targetSessions', 
+            'level',          
             'progressPercent',
-            'displayPercent', // Variabel Baru
+            'displayPercent', 
             'feedback',
             'feedbackColor',
             'currentMonth',
             'prevMonth',
             'nextMonth',
-            'remainingDays'
+            'remainingDays',
+            'riwayatTransaksi' // <-- Variabel riwayat dilempar ke Blade
         ));
     }
+
     public function downloadStory(Request $request, $member_id)
     {
+        // ... (Kode downloadStory sama seperti sebelumnya) ...
         $month = $request->query('month', now()->month);
         $year = $request->query('year', now()->year);
 
@@ -139,7 +146,7 @@ class memberDashboardController extends Controller
         })->toArray();
 
         $totalSessions = count($trainingDates);
-        $targetSessions = 12; // Target bulanan
+        $targetSessions = 12;
 
         $progressPercent = min(($totalSessions / $targetSessions) * 100, 100);
 
@@ -169,8 +176,8 @@ class memberDashboardController extends Controller
         }
 
         Browsershot::html($htmlContent)
-            ->setChromePath('C:\Program Files\Google\Chrome\Application\chrome.exe') // Sesuaikan path jika di server Linux
-            ->windowSize(414, 736) // Ukuran Story HD
+            ->setChromePath('C:\Program Files\Google\Chrome\Application\chrome.exe')
+            ->windowSize(414, 736)
             ->deviceScaleFactor(2)
             ->noSandbox()
             ->waitUntilNetworkIdle()
@@ -189,7 +196,6 @@ class memberDashboardController extends Controller
         $member = members::where('id_members', $request->member_id)->first();
 
         if ($member) {
-            // Pastikan model 'members' memiliki kolom 'target_latihan' di $fillable
             $member->update([
                 'target_latihan' => $request->target_latihan
             ]);
@@ -197,5 +203,42 @@ class memberDashboardController extends Controller
         }
 
         return redirect()->back()->with('error', 'Member tidak ditemukan.');
+    }
+
+    public function downloadRiwayatPDF($member_id)
+    {
+        $member = Members::where('id_members', $member_id)->first();
+        
+        if (!$member) {
+            return abort(404, 'Member tidak ditemukan');
+        }
+
+        $riwayatTransaksi = MembershipPayment::with('paket')
+            ->where('member_id', $member->id_members)
+            ->orderBy('tanggal_transaksi', 'desc')
+            ->get();
+
+        // Buat nama file
+        $fileName = 'Riwayat_Transaksi_' . $member->id_members . '_' . date('Ymd') . '.pdf';
+
+        $pdf = Pdf::loadView('pdf.riwayat_transaksi_pdf', compact('member', 'riwayatTransaksi'));
+
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download($fileName);
+    }
+
+    public function downloadTransaksiSinglePDF($id)
+    {
+        $transaksi = MembershipPayment::with(['member', 'paket'])->findOrFail($id);
+        
+        $fileName = 'Struk_Furion_' . $transaksi->member->id_members . '_' . date('Ymd', strtotime($transaksi->tanggal_transaksi)) . '.pdf';
+
+        $pdf = Pdf::loadView('pdf.transaksi_single_pdf', compact('transaksi'));
+        
+        $pdf->setPaper('A5', 'landscape'); 
+
+        // Download file PDF
+        return $pdf->download($fileName);
     }
 }

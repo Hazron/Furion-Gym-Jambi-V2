@@ -790,62 +790,62 @@
             }
 
             const html = `
-                            <div class="duration-block border-2 border-gray-100 rounded-xl p-4 hover:border-blue-200 transition-colors bg-gray-50/50 relative group animate-fade-in-down" id="duration_block_${blockIdCounter}">
-                                <button type="button" onclick="removeDurationBlock(${blockIdCounter})" class="btn-remove-block absolute top-3 right-3 text-gray-300 hover:text-red-500 transition-colors" title="Hapus Durasi">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                                <div class="flex items-center gap-2 mb-4">
-                                    <input type="number" min="1" max="24" class="month-input-visible w-16 h-10 rounded-lg border-2 border-gray-200 text-center font-black text-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
-                                        value="${nextMonthValue}" 
-                                        onchange="updateHiddenDuration(this, ${blockIdCounter})">
-                                    <span class="text-sm font-bold text-gray-700">Bulan</span>
-                                </div>
-                                <div class="space-y-3">
-                                    <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                                        <label class="flex items-center justify-between cursor-pointer mb-2">
-                                            <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">👤 Reguler</span>
-                                            <input type="checkbox" name="promos[${blockIdCounter}_reguler][is_selected]" value="1"
-                                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                                                onchange="
-                                                    const wrapper = document.getElementById('wrapper_${blockIdCounter}_reguler');
-                                                    const input = document.getElementById('harga_${blockIdCounter}_reguler');
-                                                    wrapper.classList.toggle('hidden', !this.checked);
-                                                    input.required = this.checked;
-                                                ">
-                                        </label>
-                                        <div id="wrapper_${blockIdCounter}_reguler" class="hidden relative mt-2">
-                                            <span class="absolute left-3 top-2 text-gray-400 text-sm font-bold pointer-events-none">Rp</span>
-                                            <input type="number" name="promos[${blockIdCounter}_reguler][harga]" id="harga_${blockIdCounter}_reguler"
-                                                class="w-full pl-9 pr-3 py-2 text-sm border-2 border-blue-200 rounded-lg focus:border-blue-500 focus:ring-blue-500 bg-blue-50/30 transition-colors placeholder:text-gray-300"
-                                                placeholder="0">
-                                            <input type="hidden" name="promos[${blockIdCounter}_reguler][durasi]" id="durasi_${blockIdCounter}_reguler" value="${nextMonthValue} Bulan">
-                                            <input type="hidden" name="promos[${blockIdCounter}_reguler][jenis]" value="promo">
+                                <div class="duration-block border-2 border-gray-100 rounded-xl p-4 hover:border-blue-200 transition-colors bg-gray-50/50 relative group animate-fade-in-down" id="duration_block_${blockIdCounter}">
+                                    <button type="button" onclick="removeDurationBlock(${blockIdCounter})" class="btn-remove-block absolute top-3 right-3 text-gray-300 hover:text-red-500 transition-colors" title="Hapus Durasi">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <input type="number" min="1" max="24" class="month-input-visible w-16 h-10 rounded-lg border-2 border-gray-200 text-center font-black text-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                                            value="${nextMonthValue}" 
+                                            onchange="updateHiddenDuration(this, ${blockIdCounter})">
+                                        <span class="text-sm font-bold text-gray-700">Bulan</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                                            <label class="flex items-center justify-between cursor-pointer mb-2">
+                                                <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">👤 Reguler</span>
+                                                <input type="checkbox" name="promos[${blockIdCounter}_reguler][is_selected]" value="1"
+                                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                                                    onchange="
+                                                        const wrapper = document.getElementById('wrapper_${blockIdCounter}_reguler');
+                                                        const input = document.getElementById('harga_${blockIdCounter}_reguler');
+                                                        wrapper.classList.toggle('hidden', !this.checked);
+                                                        input.required = this.checked;
+                                                    ">
+                                            </label>
+                                            <div id="wrapper_${blockIdCounter}_reguler" class="hidden relative mt-2">
+                                                <span class="absolute left-3 top-2 text-gray-400 text-sm font-bold pointer-events-none">Rp</span>
+                                                <input type="number" name="promos[${blockIdCounter}_reguler][harga]" id="harga_${blockIdCounter}_reguler"
+                                                    class="w-full pl-9 pr-3 py-2 text-sm border-2 border-blue-200 rounded-lg focus:border-blue-500 focus:ring-blue-500 bg-blue-50/30 transition-colors placeholder:text-gray-300"
+                                                    placeholder="0">
+                                                <input type="hidden" name="promos[${blockIdCounter}_reguler][durasi]" id="durasi_${blockIdCounter}_reguler" value="${nextMonthValue} Bulan">
+                                                <input type="hidden" name="promos[${blockIdCounter}_reguler][jenis]" value="promo">
+                                            </div>
+                                        </div>
+                                        <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                                            <label class="flex items-center justify-between cursor-pointer mb-2">
+                                                <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">👥 Couple</span>
+                                                <input type="checkbox" name="promos[${blockIdCounter}_couple][is_selected]" value="1"
+                                                    class="w-4 h-4 text-pink-500 bg-gray-100 border-gray-300 rounded focus:ring-pink-500 cursor-pointer"
+                                                    onchange="
+                                                        const wrapper = document.getElementById('wrapper_${blockIdCounter}_couple');
+                                                        const input = document.getElementById('harga_${blockIdCounter}_couple');
+                                                        wrapper.classList.toggle('hidden', !this.checked);
+                                                        input.required = this.checked;
+                                                    ">
+                                            </label>
+                                            <div id="wrapper_${blockIdCounter}_couple" class="hidden relative mt-2">
+                                                <span class="absolute left-3 top-2 text-gray-400 text-sm font-bold pointer-events-none">Rp</span>
+                                                <input type="number" name="promos[${blockIdCounter}_couple][harga]" id="harga_${blockIdCounter}_couple"
+                                                    class="w-full pl-9 pr-3 py-2 text-sm border-2 border-pink-200 rounded-lg focus:border-pink-500 focus:ring-pink-500 bg-pink-50/30 transition-colors placeholder:text-gray-300"
+                                                    placeholder="0">
+                                                <input type="hidden" name="promos[${blockIdCounter}_couple][durasi]" id="durasi_${blockIdCounter}_couple" value="${nextMonthValue} Bulan">
+                                                <input type="hidden" name="promos[${blockIdCounter}_couple][jenis]" value="promo couple">
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                                        <label class="flex items-center justify-between cursor-pointer mb-2">
-                                            <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">👥 Couple</span>
-                                            <input type="checkbox" name="promos[${blockIdCounter}_couple][is_selected]" value="1"
-                                                class="w-4 h-4 text-pink-500 bg-gray-100 border-gray-300 rounded focus:ring-pink-500 cursor-pointer"
-                                                onchange="
-                                                    const wrapper = document.getElementById('wrapper_${blockIdCounter}_couple');
-                                                    const input = document.getElementById('harga_${blockIdCounter}_couple');
-                                                    wrapper.classList.toggle('hidden', !this.checked);
-                                                    input.required = this.checked;
-                                                ">
-                                        </label>
-                                        <div id="wrapper_${blockIdCounter}_couple" class="hidden relative mt-2">
-                                            <span class="absolute left-3 top-2 text-gray-400 text-sm font-bold pointer-events-none">Rp</span>
-                                            <input type="number" name="promos[${blockIdCounter}_couple][harga]" id="harga_${blockIdCounter}_couple"
-                                                class="w-full pl-9 pr-3 py-2 text-sm border-2 border-pink-200 rounded-lg focus:border-pink-500 focus:ring-pink-500 bg-pink-50/30 transition-colors placeholder:text-gray-300"
-                                                placeholder="0">
-                                            <input type="hidden" name="promos[${blockIdCounter}_couple][durasi]" id="durasi_${blockIdCounter}_couple" value="${nextMonthValue} Bulan">
-                                            <input type="hidden" name="promos[${blockIdCounter}_couple][jenis]" value="promo couple">
-                                        </div>
-                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
             container.insertAdjacentHTML('beforeend', html);
             checkDeleteButtons();
         }
@@ -936,7 +936,6 @@
                             statusBadge.className = 'bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-sm';
                             statusBadge.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> Selesai';
 
-                            // Stop the interval if completed
                             clearInterval(progressInterval);
                         } else {
                             progressBar.classList.replace('from-emerald-400', 'from-blue-500');
@@ -952,15 +951,12 @@
                 .catch(error => console.error('Gagal mengambil data progress:', error));
         }
 
-        // ======================= INIT ALL (Hanya Satu DOMContentLoaded) =======================
+        // ======================= INIT ALL  ==========================
         document.addEventListener("DOMContentLoaded", function () {
-            // Init Chart
             initChart(@json(array_values($promoStats ?? [])));
 
-            // Init Dynamic Form Promo
             addDurationBlock();
 
-            // Lock End Date input
             const inputMulai = document.querySelector('input[name="tanggal_mulai"]');
             const inputSelesai = document.querySelector('input[name="tanggal_selesai"]');
             if (inputMulai && inputSelesai) {
@@ -972,7 +968,6 @@
                 });
             }
 
-            // Init & Start Polling for Progress Bar
             fetchBroadcastProgress();
             progressInterval = setInterval(fetchBroadcastProgress, 3000); // Polling tiap 3 detik
         });

@@ -138,7 +138,8 @@ Route::post('/admin/member/register', [memberAdminController::class, 'registerMe
 Route::get('/member/story-view/{member_id}', [MemberDashboardController::class, 'storyView'])->name('member.story.view');
 Route::get('/member/story-download/{member_id}', [MemberDashboardController::class, 'downloadStory'])->name('member.story.download');
 Route::post('/member/update-target', [memberDashboardController::class, 'updateTarget'])->name('member.update.target');
-
+Route::get('/member/riwayat-transaksi/pdf/{member_id}', [memberDashboardController::class, 'downloadRiwayatPDF'])->name('member.riwayat.pdf');
+Route::get('/member/transaksi/pdf/{id}', [memberDashboardController::class, 'downloadTransaksiSinglePDF'])->name('member.transaksi.pdf');
 
 route::get('/landingpage', function () {
     return view('landingPage');

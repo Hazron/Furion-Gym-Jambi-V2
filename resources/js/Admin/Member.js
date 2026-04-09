@@ -14,9 +14,11 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const formatTanggalIndo = (dateObj) => {
+        if (!(dateObj instanceof Date) || isNaN(dateObj)) return '-';
         return dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     };
 
+    // Fungsi Utama untuk menghitung tanggal selesai
     function hitungTanggalSelesai(tanggalMulaiStr, durasiStr) {
         let date = new Date(tanggalMulaiStr);
         if (isNaN(date.getTime())) date = new Date();
@@ -61,14 +63,29 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             });
-        }, 150); // Jeda agar animasi Tailwind selesai
+        }, 150); // Jeda agar animasi Tailwind (modal popup) selesai dulu
     }
+
+    // Fungsi Toggle Password Owner (Bypass Invoice)
+    window.toggleOwnerPassword = function(checkbox, fieldId) {
+        const field = document.getElementById(fieldId);
+        const inputField = field.querySelector('input[type="password"]');
+
+        if (checkbox.checked) {
+            field.classList.remove('hidden');
+            inputField.setAttribute('required', 'required');
+        } else {
+            field.classList.add('hidden');
+            inputField.removeAttribute('required');
+            inputField.value = ''; 
+        }
+    };
 
 
     // ==========================================
     // --- DATATABLES SETUP ---
     // ==========================================
-    if (typeof $ !== 'undefined') {
+    if (typeof $ !== 'undefined' && $('#memberTable').length) {
         var table = $('#memberTable').DataTable({
             processing: true,
             serverSide: true,
@@ -78,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     d.status_filter = $('#filterStatus').val();
                 }
             },
-            order: [[7, "desc"]], // Sort by updated_at terbaru
+            order: [[7, "desc"]], // Sort by updated_at terbaru secara default
             dom: '<"top">rt<"flex flex-col sm:flex-row justify-between items-center mt-4 gap-4"ip><"clear">',
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'px-6 py-4 font-medium' },
@@ -107,10 +124,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
+        // Search kustom
         $('#customSearch').on('keyup', function () {
             table.search(this.value).draw();
         });
 
+        // Filter status
         $('#filterStatus').on('change', function () {
             table.column(2).search(this.value).draw();
         });
@@ -121,6 +140,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     window.toggleModal = function(modalId, show) {
         const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
         const box = modal.querySelector('div[id^="modalBox"]');
 
         if (show) {
@@ -156,13 +177,16 @@ document.addEventListener('DOMContentLoaded', function () {
     window.updateKalkulasiTambah = function() {
         const select = document.getElementById('selectPaketTambah');
         const inputMulai = document.getElementById('inputTanggalMulai');
-        if (!select || !inputMulai) return;
+        
+        if (!select || !inputMulai || select.selectedIndex < 0) return;
 
         const selectedOption = select.options[select.selectedIndex];
         const durasiStr = selectedOption.getAttribute('data-durasi') || '0';
         const hargaRaw = parseInt(selectedOption.getAttribute('data-harga')) || 0;
         const tipe = selectedOption.getAttribute('data-tipe');
         const tanggalMulaiVal = inputMulai.value;
+
+        if(!tanggalMulaiVal) return;
 
         document.getElementById('inputTipePaketTambah').value = tipe;
         const hasil = hitungTanggalSelesai(tanggalMulaiVal, durasiStr);
@@ -188,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
             coupleForm.classList.remove('hidden');
             initSafeSelect2('#inputPartnerTambah', '#modalTambahMember');
 
-            partnerInput.on('change', function() {
+            partnerInput.off('change').on('change', function() {
                 if ($(this).val() !== '' && $(this).val() !== null) {
                     inputs2.forEach(el => { if(el) el.removeAttribute('required'); });
                     radios2.forEach(el => { if(el) el.removeAttribute('required'); });
@@ -227,7 +251,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('formEditMember').action = url;
         window.toggleModal("modalEditMember", true);
     };
-    window.closeEditModal = function() { window.toggleModal("modalEditMember", false); };
+    
+    window.closeEditModal = function() { 
+        window.toggleModal("modalEditMember", false); 
+    };
 
 
     // ==========================================
@@ -235,9 +262,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     let rawTanggalSelesaiAwal = null;
     const selectPaketPerpanjang = document.getElementById('selectPaketPerpanjang');
+    const inputTanggalMulaiPerpanjang = document.getElementById('inputTanggalMulaiPerpanjang');
 
     window.updatePerpanjangSummary = function() {
-        if (selectPaketPerpanjang.selectedIndex < 0) return;
+        if (!selectPaketPerpanjang || selectPaketPerpanjang.selectedIndex < 0) return;
+        
         const selectedOption = selectPaketPerpanjang.options[selectPaketPerpanjang.selectedIndex];
         const durasiStr = selectedOption.getAttribute('data-durasi') || '0';
         const hargaRaw = parseInt(selectedOption.getAttribute('data-harga')) || 0;
@@ -246,12 +275,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('inputTipePaketPerpanjang').value = tipe;
 
         const isCouple = (tipe === 'couple' || tipe === 'promo couple' || selectedOption.text.toLowerCase().includes('couple'));
-
         const coupleSection = document.getElementById('renewCoupleSection');
         const partnerInput = $('#inputPartnerRenew');
         const currentMemberId = document.getElementById('perpanjang_id_member').value;
 
-        // Elemen input untuk member baru di modal perpanjang
         const inputs2Renew = [
             document.getElementById('inputNama2Renew'), 
             document.getElementById('inputTelp2Renew'), 
@@ -265,7 +292,6 @@ document.addEventListener('DOMContentLoaded', function () {
             partnerInput.find('option[value="'+currentMemberId+'"]').prop('disabled', true);
             initSafeSelect2('#inputPartnerRenew', '#modalPerpanjangMember');
 
-            // Logika untuk toggle required jika pilih dari dropdown vs daftar baru
             partnerInput.off('change.couple').on('change.couple', function() {
                 if ($(this).val() !== '' && $(this).val() !== null) {
                     inputs2Renew.forEach(el => { if(el) el.removeAttribute('required'); });
@@ -290,16 +316,11 @@ document.addEventListener('DOMContentLoaded', function () {
             radios2Renew.forEach(el => { if(el) { el.removeAttribute('required'); el.checked = false; } });
         }
 
-        if (!rawTanggalSelesaiAwal) return;
-        let startDateObj = new Date(rawTanggalSelesaiAwal);
-        let todayObj = new Date();
-        startDateObj.setHours(0, 0, 0, 0); todayObj.setHours(0, 0, 0, 0);
+        // Kalkulasi tanggal berdasarkan input mulai perpanjangan
+        const tanggalMulai = inputTanggalMulaiPerpanjang.value;
+        if(!tanggalMulai) return;
 
-        let basisTanggalMulai = (startDateObj < todayObj) ? todayObj : startDateObj;
-        const basisString = basisTanggalMulai.getFullYear() + "-" + String(basisTanggalMulai.getMonth() + 1).padStart(2, '0') + "-" + String(basisTanggalMulai.getDate()).padStart(2, '0');
-        document.getElementById('inputTanggalMulaiPerpanjang').value = basisString;
-
-        const hasil = hitungTanggalSelesai(basisString, durasiStr);
+        const hasil = hitungTanggalSelesai(tanggalMulai, durasiStr);
         document.getElementById('display_durasi_tambah').innerText = hasil.textDurasi;
         document.getElementById('display_tanggal_selesai_baru').innerText = hasil.textTanggal;
         document.getElementById('display_total_perpanjang').innerText = formatRupiah(hargaRaw);
@@ -314,6 +335,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const tglSelesaiFormatted = data.tanggal_selesai ? formatTanggalIndo(new Date(data.tanggal_selesai)) : 'Sudah Expired / Baru';
         document.getElementById('display_tanggal_selesai_saat_ini').textContent = tglSelesaiFormatted;
 
+        // Setup Tanggal Mulai Perpanjangan Secara Pintar
+        let startDateObj = new Date(rawTanggalSelesaiAwal);
+        let todayObj = new Date();
+        startDateObj.setHours(0, 0, 0, 0); todayObj.setHours(0, 0, 0, 0);
+        let basisTanggalMulai = (startDateObj < todayObj) ? todayObj : startDateObj;
+        
+        // Format YYYY-MM-DD untuk input type date
+        const basisString = basisTanggalMulai.getFullYear() + "-" + String(basisTanggalMulai.getMonth() + 1).padStart(2, '0') + "-" + String(basisTanggalMulai.getDate()).padStart(2, '0');
+        inputTanggalMulaiPerpanjang.value = basisString;
+
         let realUrl = window.routeMemberPerpanjang.replace('ID_MEMBER_PLACEHOLDER', data.id_members);
         document.getElementById('formPerpanjangMember').action = realUrl;
 
@@ -324,12 +355,10 @@ document.addEventListener('DOMContentLoaded', function () {
         selectPaketPerpanjang.selectedIndex = 0;
 
         window.toggleModal("modalPerpanjangMember", true);
-        selectPaketPerpanjang.addEventListener('change', window.updatePerpanjangSummary);
     };
 
     window.closePerpanjangModal = function() {
         window.toggleModal("modalPerpanjangMember", false);
-        selectPaketPerpanjang.removeEventListener('change', window.updatePerpanjangSummary);
         if ($('#inputPartnerRenew').hasClass("select2-hidden-accessible")) {
             $('#inputPartnerRenew').val('').trigger('change').select2('destroy');
         }
@@ -340,23 +369,26 @@ document.addEventListener('DOMContentLoaded', function () {
     // 4. REAKTIFASI
     // ==========================================
     const selectPaketReaktifasi = document.getElementById('selectPaketReaktifasi');
+    const inputTanggalMulaiReaktifasi = document.getElementById('inputTanggalMulaiReaktifasi');
 
     window.updateReaktifasiSummary = function() {
-        if (selectPaketReaktifasi.selectedIndex < 0) return;
+        if (!selectPaketReaktifasi || selectPaketReaktifasi.selectedIndex < 0) return;
+        
         const selectedOption = selectPaketReaktifasi.options[selectPaketReaktifasi.selectedIndex];
         const durasiStr = selectedOption.getAttribute('data-durasi') || '0';
         const hargaRaw = parseInt(selectedOption.getAttribute('data-harga')) || 0;
         const tipe = selectedOption.getAttribute('data-tipe');
+        const tanggalMulaiValue = inputTanggalMulaiReaktifasi.value;
+
+        if(!tanggalMulaiValue) return;
 
         document.getElementById('inputTipePaketReaktifasi').value = tipe;
 
         const isCouple = (tipe === 'couple' || tipe === 'promo couple' || selectedOption.text.toLowerCase().includes('couple'));
-
         const coupleSection = document.getElementById('reactivateCoupleSection');
         const partnerInput = $('#inputPartnerReactivate');
         const currentMemberId = document.getElementById('reaktifasi_id_member').value;
 
-        // Elemen input untuk member baru di modal reaktivasi
         const inputs2Reactivate = [
             document.getElementById('inputNama2Reactivate'), 
             document.getElementById('inputTelp2Reactivate'), 
@@ -370,7 +402,6 @@ document.addEventListener('DOMContentLoaded', function () {
             partnerInput.find('option[value="'+currentMemberId+'"]').prop('disabled', true);
             initSafeSelect2('#inputPartnerReactivate', '#modalReaktifasiMember');
 
-            // Logika untuk toggle required
             partnerInput.off('change.couple').on('change.couple', function() {
                 if ($(this).val() !== '' && $(this).val() !== null) {
                     inputs2Reactivate.forEach(el => { if(el) el.removeAttribute('required'); });
@@ -395,8 +426,9 @@ document.addEventListener('DOMContentLoaded', function () {
             radios2Reactivate.forEach(el => { if(el) { el.removeAttribute('required'); el.checked = false; } });
         }
 
-        const todayStr = new Date().toISOString().split('T')[0];
-        const hasil = hitungTanggalSelesai(todayStr, durasiStr);
+        const hasil = hitungTanggalSelesai(tanggalMulaiValue, durasiStr);
+        
+        document.getElementById('display_tanggal_mulai_reaktifasi').textContent = formatTanggalIndo(new Date(tanggalMulaiValue));
         document.getElementById('display_tanggal_selesai_reaktifasi').textContent = hasil.textTanggal;
         document.getElementById('display_total_reaktifasi').textContent = formatRupiah(hargaRaw);
     };
@@ -406,21 +438,23 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('reaktifasi_id_member').value = data.id_members;
         document.getElementById('display_reaktifasi_nama').textContent = data.nama_lengkap;
 
+        // Set default tanggal mulai ke hari ini
+        inputTanggalMulaiReaktifasi.value = new Date().toISOString().split('T')[0];
+
         let url = window.routeMembershipReactivate.replace(':id', data.id_members);
         document.getElementById('formReaktifasiMember').action = url;
 
+        document.getElementById('display_tanggal_mulai_reaktifasi').innerText = '-';
         document.getElementById('display_tanggal_selesai_reaktifasi').innerText = '-';
         document.getElementById('display_total_reaktifasi').innerText = 'Rp 0';
         document.getElementById('reactivateCoupleSection').classList.add('hidden');
         selectPaketReaktifasi.selectedIndex = 0;
 
         window.toggleModal("modalReaktifasiMember", true);
-        selectPaketReaktifasi.addEventListener('change', window.updateReaktifasiSummary);
     };
 
     window.closeReaktifasiModal = function() {
         window.toggleModal("modalReaktifasiMember", false);
-        selectPaketReaktifasi.removeEventListener('change', window.updateReaktifasiSummary);
         if ($('#inputPartnerReactivate').hasClass("select2-hidden-accessible")) {
             $('#inputPartnerReactivate').val('').trigger('change').select2('destroy');
         }
@@ -468,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const dateA = new Date(a.tanggal_transaksi);
             const dateB = new Date(b.tanggal_transaksi);
             if (dateB - dateA !== 0) return dateB - dateA;
-            return b.id - a.id;
+            return b.id - a.id; // Fallback urut id jika tanggal sama
         });
 
         currentModalPage = 1;
@@ -499,7 +533,6 @@ document.addEventListener('DOMContentLoaded', function () {
             let jenisTxt = pay.jenis_transaksi || '-';
             let jenisLower = jenisTxt.toLowerCase();
 
-            // Pengecekan disesuaikan untuk "registrasi", "perpanjang", "reaktivasi" berdasarkan arahan Controller Anda
             if (jenisLower.includes('registrasi') || jenisLower.includes('membership')) {
                 badgeClass = 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20';
             } else if (jenisLower.includes('perpanjang') || jenisLower.includes('renewal')) {
@@ -588,5 +621,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    window.closeDetailModal = function() { window.toggleModal("detailMemberModal", false); };
+    window.closeDetailModal = function() { 
+        window.toggleModal("detailMemberModal", false); 
+    };
 });
