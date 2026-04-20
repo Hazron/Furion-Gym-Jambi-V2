@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('jenis_transaksi');
             $table->string('nomor_invoice')->unique();
             $table->date('tanggal_transaksi');
+            $table->string('bukti_transfer')->nullable();
             $table->string('metode_pembayaran')->nullable();
             $table->decimal('nominal', 10, 2);
             $table->string('status_pembayaran'); 

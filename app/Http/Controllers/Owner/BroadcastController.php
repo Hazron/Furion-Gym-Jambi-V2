@@ -85,7 +85,7 @@ class BroadcastController extends Controller
                     Log::error("Manual Broadcast Gagal: {$namaMember} ({$targetPhone}). Reason: {$reason}");
                 }
 
-                sleep(1); 
+                sleep(15); 
 
             } catch (\Exception $e) {
                 $failCount++;

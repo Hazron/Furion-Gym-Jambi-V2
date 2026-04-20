@@ -16,7 +16,7 @@ class LaporanMembership extends Controller
         $dateParam = $request->get('date', now()->format('Y-m-d'));
         $targetDate = Carbon::parse($dateParam);
 
-        // 2. Setup Query Dasar
+        // 2. Setup Query Dasar (Eager Loading untuk performa)
         $query = MembershipPayment::with(['member', 'paket']);
 
         // 3. Logika Filter & Navigasi
@@ -30,8 +30,7 @@ class LaporanMembership extends Controller
             $navLabel = $targetDate->translatedFormat('d F Y');
             $prevLink = $targetDate->copy()->subDay()->format('Y-m-d');
             $nextLink = $targetDate->copy()->addDay()->format('Y-m-d');
-            if ($targetDate->isToday())
-                $disableNext = true;
+            if ($targetDate->isToday()) $disableNext = true;
 
         } elseif ($periode == 'minggu') {
             $startOfWeek = $targetDate->copy()->startOfWeek();
@@ -41,18 +40,16 @@ class LaporanMembership extends Controller
             $navLabel = $startOfWeek->format('d M') . ' - ' . $endOfWeek->format('d M Y');
             $prevLink = $targetDate->copy()->subWeek()->format('Y-m-d');
             $nextLink = $targetDate->copy()->addWeek()->format('Y-m-d');
-            if ($targetDate->copy()->endOfWeek()->isFuture())
-                $disableNext = true;
+            if ($targetDate->copy()->endOfWeek()->isFuture()) $disableNext = true;
 
         } elseif ($periode == 'bulan') {
             $query->whereMonth('tanggal_transaksi', $targetDate->month)
-                ->whereYear('tanggal_transaksi', $targetDate->year);
+                  ->whereYear('tanggal_transaksi', $targetDate->year);
 
             $navLabel = $targetDate->translatedFormat('F Y');
             $prevLink = $targetDate->copy()->subMonth()->format('Y-m-d');
             $nextLink = $targetDate->copy()->addMonth()->format('Y-m-d');
-            if ($targetDate->isSameMonth(now()))
-                $disableNext = true;
+            if ($targetDate->isSameMonth(now())) $disableNext = true;
 
         } elseif ($periode == 'tahun') {
             $query->whereYear('tanggal_transaksi', $targetDate->year);
@@ -60,37 +57,22 @@ class LaporanMembership extends Controller
             $navLabel = $targetDate->format('Y');
             $prevLink = $targetDate->copy()->subYear()->format('Y-m-d');
             $nextLink = $targetDate->copy()->addYear()->format('Y-m-d');
-            if ($targetDate->year >= now()->year)
-                $disableNext = true;
+            if ($targetDate->year >= now()->year) $disableNext = true;
 
         } elseif ($periode == 'seluruh') {
             $navLabel = "Semua Waktu";
             $disableNext = true;
         }
 
+        // 4. EKSEKUSI QUERY UTAMA (Hanya 1x panggil ke Database)
         $laporanData = $query->latest('tanggal_transaksi')->get();
 
-        $countRegistrasi = $laporanData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'membership')->count();
-        $countRenewal = $laporanData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'renewal')->count();
+        // 5. Hitung Summary Cards (Menggunakan terminologi yang sudah dikoreksi)
+        $countRegistrasi = $laporanData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'registrasi')->count();
+        $countRenewal = $laporanData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'perpanjang')->count();
         $countReactivation = $laporanData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'reaktivasi')->count();
 
-        if ($periode == 'bulan') {
-            $daysInMonth = $targetDate->daysInMonth;
-            for ($d = 1; $d <= $daysInMonth; $d++) {
-                $currentDayStr = $targetDate->copy()->day($d)->format('Y-m-d');
-                $chartLabels[] = $targetDate->copy()->day($d)->format('d M');
-
-                $dayData = $laporanData->filter(fn($item) => Carbon::parse($item->tanggal_transaksi)->format('Y-m-d') == $currentDayStr);
-
-                // Gunakan strtolower juga di sini
-                $chartRegistrasi[] = $dayData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'membership')->count();
-                $chartRenewal[] = $dayData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'renewal')->count();
-                $chartReactivation[] = $dayData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'reaktivasi')->count();
-            }
-        }
-        // ... sisa kode lainnya ...
-
-        // 5. Paket Terlaris (Top 5)
+        // 6. Paket Terlaris (Top 5)
         $paketStats = $laporanData->groupBy(function ($item) {
             return $item->nama_paket_snapshot ?? ($item->paket->nama_paket ?? 'Lainnya');
         })->map->count()->sortDesc()->take(5);
@@ -98,7 +80,7 @@ class LaporanMembership extends Controller
         $chartPaketLabels = $paketStats->keys()->toArray();
         $chartPaketValues = $paketStats->values()->toArray();
 
-        // 6. Logika Grafik (Tanpa Query di dalam Loop)
+        // 7. Logika Grafik Tren Pertumbuhan (Tanpa Query di dalam Loop)
         $chartLabels = [];
         $chartRegistrasi = [];
         $chartRenewal = [];
@@ -110,34 +92,49 @@ class LaporanMembership extends Controller
                 $currentDayStr = $targetDate->copy()->day($d)->format('Y-m-d');
                 $chartLabels[] = $targetDate->copy()->day($d)->format('d M');
 
-                // Filter dari koleksi yang sudah ada di memory (Cepat)
+                // Filter dari memory collection ($laporanData)
                 $dayData = $laporanData->filter(fn($item) => Carbon::parse($item->tanggal_transaksi)->format('Y-m-d') == $currentDayStr);
 
-                $chartRegistrasi[] = $dayData->where('jenis_transaksi', 'membership')->count();
-                $chartRenewal[] = $dayData->where('jenis_transaksi', 'renewal')->count();
-                $chartReactivation[] = $dayData->where('jenis_transaksi', 'reaktivasi')->count();
+                $chartRegistrasi[] = $dayData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'registrasi')->count();
+                $chartRenewal[] = $dayData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'perpanjang')->count();
+                $chartReactivation[] = $dayData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'reaktivasi')->count();
             }
         } elseif ($periode == 'tahun') {
             for ($m = 1; $m <= 12; $m++) {
                 $chartLabels[] = Carbon::create()->month($m)->translatedFormat('M');
 
-                $monthData = $laporanData->filter(fn($item) => Carbon::parse($item->tanggal_transaksi)->month == $m);
+                $monthData = $laporanData->filter(fn($item) => Carbon::parse($item->tanggal_transaksi)->month == $m && Carbon::parse($item->tanggal_transaksi)->year == $targetDate->year);
 
-                $chartRegistrasi[] = $monthData->where('jenis_transaksi', 'membership')->count();
-                $chartRenewal[] = $monthData->where('jenis_transaksi', 'renewal')->count();
-                $chartReactivation[] = $monthData->where('jenis_transaksi', 'reaktivasi')->count();
+                $chartRegistrasi[] = $monthData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'registrasi')->count();
+                $chartRenewal[] = $monthData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'perpanjang')->count();
+                $chartReactivation[] = $monthData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'reaktivasi')->count();
             }
+        } elseif ($periode == 'minggu') {
+            $startOfWeek = $targetDate->copy()->startOfWeek();
+            for ($i = 0; $i < 7; $i++) {
+                $currentDay = $startOfWeek->copy()->addDays($i);
+                $chartLabels[] = $currentDay->translatedFormat('D'); // Menampilkan nama hari (Sen, Sel, dll)
+                
+                $dayData = $laporanData->filter(fn($item) => Carbon::parse($item->tanggal_transaksi)->format('Y-m-d') == $currentDay->format('Y-m-d'));
+
+                $chartRegistrasi[] = $dayData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'registrasi')->count();
+                $chartRenewal[] = $dayData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'perpanjang')->count();
+                $chartReactivation[] = $dayData->filter(fn($i) => strtolower($i->jenis_transaksi) == 'reaktivasi')->count();
+            }
+        } elseif ($periode == 'hari') {
+            // Tampilkan 1 titik data saja untuk hari tersebut
+            $chartLabels[] = $targetDate->translatedFormat('d M Y');
+            $chartRegistrasi[] = $countRegistrasi;
+            $chartRenewal[] = $countRenewal;
+            $chartReactivation[] = $countReactivation;
         } else {
-            // Default 7 hari terakhir
-            for ($i = 6; $i >= 0; $i--) {
-                $date = now()->subDays($i);
-                $chartLabels[] = $date->format('d M');
-
-                $dayData = MembershipPayment::whereDate('tanggal_transaksi', $date->format('Y-m-d'))->get();
-
-                $chartRegistrasi[] = $dayData->where('jenis_transaksi', 'membership')->count();
-                $chartRenewal[] = $dayData->where('jenis_transaksi', 'renewal')->count();
-                $chartReactivation[] = $dayData->where('jenis_transaksi', 'reaktivasi')->count();
+            // Fallback (Seluruh Waktu) - Dikelompokkan per bulan/tahun
+            $groupedData = $laporanData->groupBy(fn($item) => Carbon::parse($item->tanggal_transaksi)->format('M Y'))->reverse();
+            foreach ($groupedData as $monthYear => $group) {
+                $chartLabels[] = $monthYear;
+                $chartRegistrasi[] = $group->filter(fn($i) => strtolower($i->jenis_transaksi) == 'registrasi')->count();
+                $chartRenewal[] = $group->filter(fn($i) => strtolower($i->jenis_transaksi) == 'perpanjang')->count();
+                $chartReactivation[] = $group->filter(fn($i) => strtolower($i->jenis_transaksi) == 'reaktivasi')->count();
             }
         }
 

@@ -21,14 +21,14 @@ class DatabaseSeeder extends Seeder
             'name' => 'Monic',
             'email' => 'admin@furiongymjambi.com',
             'role' => 'admin',
-            'password' => bcrypt('AdminMonicFurionJambi'),
+            'password' => bcrypt('tes'),
         ]);
 
         User::factory()->create([
             'name' => 'Deki',
             'email' => 'owner@furiongymjambi.com',
             'role' => 'owner',
-            'password' => bcrypt('DekikaryaNurdiMobilindo'),
+            'password' => bcrypt('tes'),
         ]);
 
         $paketData = [
