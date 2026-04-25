@@ -1,215 +1,209 @@
-document.addEventListener('DOMContentLoaded', function () {
-    
-    /* ======================================================================
-       1. CONFIG & STATE
-       ====================================================================== */
-    let currentType = 'member'; // Default: member
-    let currentPeriod = 'week'; // Default: week
-    let chartInstance = null;
+document.addEventListener('DOMContentLoaded', function() {
+    const dbData = window.dashboardData;
 
-    // Warna Grafik
-    const chartColors = {
-        member: '#2563EB',  // Biru
-        revenue: '#10B981', // Hijau
-        visit: '#8B5CF6'    // Ungu
-    };
-
-    // Ambil data dari Window (yang dikirim dari Blade)
-    const dbData = window.dashboardData || {};
-
-    /* ======================================================================
-       2. HELPER FUNCTIONS
-       ====================================================================== */
-    function getLabelType(type) {
-        if (type === 'revenue') return 'Pendapatan';
-        if (type === 'visit') return 'Kunjungan';
-        return 'Member Baru';
+    if (!dbData) {
+        console.error("Chart Error: Data 'window.dashboardData' tidak ditemukan. Pastikan sudah didefinisikan di Blade.");
+        return;
     }
 
-    function updateTitles() {
+    let chart; 
+
+    function checkFilters() {
+        const optionDay = document.getElementById('optionDay');
+        if (optionDay) {
+            optionDay.disabled = false; // Aktifkan opsi jam
+        }
+    }
+
+    function generateChartData(topic, period) {
+        let categories = [],
+            data = [],
+            name = '',
+            color = '',
+            type = 'area',
+            unit = '',
+            title = '';
+
+        // Ambil data dari object dbData Owner
+        const source = dbData[period];
+        if (source) {
+            categories = source.labels || [];
+            data = source[topic] || [];
+        }
+
+        // --- A. DATA KUNJUNGAN (VISIT) ---
+        if (topic === 'visit') {
+            title = 'Statistik Kunjungan Gym';
+            name = 'Total Visit';
+            color = '#8B5CF6'; // Ungu
+            unit = ' Orang';
+            type = 'bar'; // Visit selalu Bar
+        }
+
+        // --- B. DATA MEMBER ---
+        else if (topic === 'member') {
+            title = 'Statistik Pertumbuhan Member';
+            name = 'Member Baru';
+            color = '#2563EB'; // Biru
+            unit = ' Orang';
+            type = 'area'; // Member selalu Area
+        }
+
+        // --- C. DATA REVENUE ---
+        else if (topic === 'revenue') {
+            title = 'Total Revenue';
+            name = 'Pemasukan';
+            color = '#10B981'; // Hijau
+            unit = '';
+
+            // Revenue berubah-ubah bentuk sesuai waktu seperti Admin
+            if (period === 'day') type = 'bar';
+            else if (period === 'week') type = 'line';
+            else type = 'area';
+        }
+
+        return { categories, data, name, color, type, unit, title };
+    }
+
+    function renderChart() {
+        checkFilters();
+        
+        const topicElement = document.getElementById('dataTypeFilter');
+        const periodElement = document.getElementById('timeFilter');
+
+        if (!topicElement || !periodElement) return;
+
+        const topic = topicElement.value;
+        const period = periodElement.value;
+        const config = generateChartData(topic, period);
+
+        // Update Judul & Subjudul di HTML
         const titleEl = document.getElementById('chartTitle');
         const subTitleEl = document.getElementById('chartSubtitle');
         
-        const titles = {
-            'member': 'Statistik Pertumbuhan Member',
-            'revenue': 'Grafik Pendapatan',
-            'visit': 'Statistik Kunjungan Gym'
-        };
+        if(titleEl) titleEl.innerText = config.title;
         
-        const subtitles = {
-            'year': 'Laporan Tahun Ini',
-            'month': 'Laporan Bulan Ini',
-            'week': '7 Hari Terakhir',
-            'day': 'Data Hari Ini (Per Jam)'
-        };
-
-        if (titleEl) titleEl.innerText = titles[currentType];
-        if (subTitleEl) subTitleEl.innerText = subtitles[currentPeriod];
-    }
-
-    /* ======================================================================
-       3. CHART LOGIC (APEXCHARTS)
-       ====================================================================== */
-    function renderChart() {
-        const chartElement = document.querySelector("#dynamicChart");
-        
-        // Safety check
-        if (!chartElement) return;
-
-        // Cek ketersediaan data
-        if (!dbData[currentType] || !dbData[currentType][currentPeriod]) {
-            console.warn('Data chart tidak tersedia untuk tipe/periode ini.');
-            chartElement.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400 text-sm">Data tidak tersedia</div>';
-            return;
+        if(subTitleEl) {
+            let subtitleText = '';
+            if (period === 'day') subtitleText = 'Data per jam (06:00 - 23:00)';
+            else if (period === 'week') subtitleText = '7 Hari Terakhir';
+            else if (period === 'month') subtitleText = 'Laporan Bulan Ini';
+            else subtitleText = 'Laporan Tahun Ini';
+            subTitleEl.innerText = subtitleText;
         }
 
-        const chartSource = dbData[currentType][currentPeriod];
-        
-        // Konfigurasi Chart
+        // Cek jika data kosong untuk hindari bug Y-axis "nyangkut" di angka jutaan
+        const isAllZero = config.data.length > 0 && config.data.every(val => val === 0);
+
         const options = {
             series: [{
-                name: getLabelType(currentType),
-                data: chartSource.data || []
+                name: config.name,
+                data: config.data
             }],
             chart: {
-                type: 'area',
+                id: 'mainChart', // ID yang sama dengan Admin agar animasinya identik
+                type: config.type,
                 height: 320,
                 fontFamily: 'Inter, sans-serif',
                 toolbar: { show: false },
                 animations: { enabled: true }
             },
-            colors: [chartColors[currentType]],
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shadeIntensity: 1,
-                    opacityFrom: 0.4,
-                    opacityTo: 0.05,
-                    stops: [0, 90, 100]
-                }
-            },
+            colors: [config.color],
             dataLabels: { enabled: false },
             stroke: {
                 curve: 'smooth',
                 width: 3
             },
             xaxis: {
-                categories: chartSource.labels || [],
-                axisBorder: { show: false },
-                axisTicks: { show: false },
+                categories: config.categories,
                 labels: {
-                    style: { colors: '#9CA3AF', fontSize: '11px' }
-                }
+                    style: { colors: '#9ca3af', fontSize: '11px' }
+                },
+                axisBorder: { show: false },
+                axisTicks: { show: false }
             },
             yaxis: {
+                min: 0,
+                max: isAllZero ? 10 : undefined, // Memperbaiki bug sumbu Y kosong
                 labels: {
-                    style: { colors: '#9CA3AF', fontSize: '11px' },
+                    style: { colors: '#9ca3af' },
                     formatter: (val) => {
-                        if (currentType === 'revenue') {
+                        if (topic === 'revenue') {
                             if (val >= 1000000) return (val / 1000000).toFixed(1) + 'jt';
-                            if (val >= 1000) return (val / 1000).toFixed(0) + 'rb';
+                            if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
+                            return val;
                         }
-                        return val;
+                        return Math.round(val);
                     }
                 }
             },
             grid: {
-                borderColor: '#F3F4F6',
-                strokeDashArray: 4,
-                yaxis: { lines: { show: true } }
+                borderColor: '#f3f4f6',
+                strokeDashArray: 4
             },
             tooltip: {
                 theme: 'light',
                 y: {
                     formatter: (val) => {
-                        if (currentType === 'revenue') {
-                            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+                        if (topic === 'revenue') {
+                            return new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR',
+                                minimumFractionDigits: 0
+                            }).format(val);
                         }
-                        return val;
+                        return val + config.unit;
                     }
                 }
             }
         };
 
-        // Render atau Update
-        if (chartInstance) {
-            chartInstance.updateOptions(options);
-        } else {
-            chartInstance = new ApexCharts(chartElement, options);
-            chartInstance.render();
+        const chartElement = document.querySelector("#dynamicChart");
+        if (chartElement) {
+            if (chart) {
+                // Update pakai cara Admin agar transisi & animasinya 100% sama
+                chart.updateOptions(options, false, true, true);
+            } else {
+                chart = new ApexCharts(chartElement, options);
+                chart.render();
+            }
         }
-
-        updateTitles();
     }
 
-    /* ======================================================================
-       4. GLOBAL FUNCTIONS (EXPOSED TO WINDOW)
-       Penting agar onclick="..." di HTML bisa membacanya
-       ====================================================================== */
+    // Listener persis seperti Admin
+    const topicFilter = document.getElementById('dataTypeFilter');
+    const periodFilter = document.getElementById('timeFilter');
 
-    // Handler Ganti Tipe Data (Member/Revenue/Visit)
+    if (topicFilter) topicFilter.addEventListener('change', renderChart);
+    if (periodFilter) periodFilter.addEventListener('change', renderChart);
+
+    // Render pertama kali
+    renderChart();
+
+    // =========================================================
+    // Fungsi Global (Karena Blade Owner masih pakai onclick="...")
+    // =========================================================
     window.handleTypeChange = function() {
-        const select = document.getElementById('dataTypeFilter');
-        if(select) {
-            currentType = select.value;
-            // Opsional: Reset ke 'week' saat ganti tipe agar data konsisten
-            document.getElementById('timeFilter').value = 'week';
-            currentPeriod = 'week';
-            
-            // Opsional: Enable/Disable opsi 'day' untuk visit
-            const optionDay = document.getElementById('optionDay');
-            if(optionDay) {
-                optionDay.disabled = (currentType === 'visit'); 
-            }
-            
-            renderChart();
-        }
+        renderChart();
     };
-
-    // Handler Ganti Waktu (Year/Month/Week/Day)
     window.updateChart = function() {
-        const select = document.getElementById('timeFilter');
-        if(select) {
-            currentPeriod = select.value;
-            renderChart();
-        }
+        renderChart();
     };
-
-    // Modal Logic (Buka)
     window.openModal = function(modalId) {
         const modal = document.getElementById(modalId);
-        const backdrop = document.getElementById('modalBackdrop'); // Pastikan ID ini ada di HTML jika pakai backdrop terpisah
-        if(modal) {
-            modal.classList.remove('hidden');
-        }
+        if(modal) modal.classList.remove('hidden');
     };
-
-    // Modal Logic (Tutup)
     window.closeModal = function(modalId) {
         const modal = document.getElementById(modalId);
         if(modal) modal.classList.add('hidden');
     };
-
-    // Sidebar Mobile Toggle
     window.toggleSidebar = function() {
-        const sidebar = document.getElementById('logo-sidebar'); // Pastikan ID sidebar benar (biasanya di layout navbar)
+        const sidebar = document.getElementById('logo-sidebar') || document.querySelector('aside');
         const backdrop = document.getElementById('sidebar-backdrop');
-
-        const targetSidebar = sidebar || document.querySelector('aside'); 
-
-        if (targetSidebar) {
-            targetSidebar.classList.toggle('-translate-x-full');
-            if(backdrop) {
-                backdrop.classList.toggle('hidden');
-                backdrop.classList.toggle('opacity-0');
-            }
-        } else {
-            console.error('Sidebar element not found. Check ID "logo-sidebar"');
+        if (sidebar) sidebar.classList.toggle('-translate-x-full');
+        if (backdrop) {
+            backdrop.classList.toggle('hidden');
+            backdrop.classList.toggle('opacity-0');
         }
-    }
-
-    /* ======================================================================
-       5. INIT
-       ====================================================================== */
-    renderChart();
+    };
 });
