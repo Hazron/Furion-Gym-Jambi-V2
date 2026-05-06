@@ -11,6 +11,7 @@ use App\Models\order;
 use App\Models\order_item;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
 {
@@ -23,7 +24,6 @@ class ProdukController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validasi Input
         $request->validate([
             'items' => 'required|array',
             'items.*.id' => 'required',
@@ -31,7 +31,6 @@ class ProdukController extends Controller
             'total_amount' => 'required|numeric',
             'payment_status' => 'required|string',
             'payment_method' => 'required|string|in:cash,qris,transfer',
-            // Tambahkan validasi file
             'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048', 
         ]);
 
@@ -40,26 +39,23 @@ class ProdukController extends Controller
         try {
             $invoiceCode = 'INV-' . date('YmdHis') . '-' . rand(100, 999);
 
-            // 2. Upload Bukti Transfer jika ada
             $buktiPath = null;
             if ($request->hasFile('bukti_transfer')) {
                 $buktiPath = $request->file('bukti_transfer')->store('bukti_transfer_produk', 'public');
             }
 
-            // 3. Buat Data Order
             $order = order::create([
-                'member_id'      => $request->member_id ?: null, // Bisa null jika Guest
-                'kasir_id'       => Auth::id(), // ID Admin yang login
+                'member_id'      => $request->member_id ?: null,
+                'kasir_id'       => Auth::id(),
                 'invoice_code'   => $invoiceCode,
-                'subtotal'       => $request->total_amount, // Sementara sama dengan total
-                'discount'       => 0, // Logika diskon bisa ditambah nanti
+                'subtotal'       => $request->total_amount,
+                'discount'       => 0,
                 'total_payment'  => $request->total_amount,
                 'payment_method' => $request->payment_method,
                 'payment_status' => $request->payment_status,
-                'bukti_transfer' => $buktiPath, // Simpan ke database
+                'bukti_transfer' => $buktiPath,
             ]);
 
-            // 4. Loop Items Keranjang
             foreach ($request->items as $item) {
                 $produk = Produk::where('id_produk', $item['id'])->first();
                 if (!$produk) {
@@ -68,20 +64,19 @@ class ProdukController extends Controller
                 if ($produk->stok_produk < $item['qty']) {
                     throw new \Exception("Stok {$produk->nama_produk} tidak mencukupi.");
                 }
+                
                 order_item::create([
-                    'order_id'   => $order->order_id ?? $order->id, // Sesuaikan dengan PK orders
-                    'produk_id' => $produk->id_produk,
+                    'order_id'   => $order->order_id ?? $order->id,
+                    'produk_id'  => $produk->id_produk,
                     'qty'        => $item['qty'],
-                    'price'      => $produk->harga_produk, // Pakai harga dari DB biar aman
+                    'price'      => $produk->harga_produk,
                     'total'      => $produk->harga_produk * $item['qty'],
                 ]);
 
-                // 5. Kurangi Stok
                 $produk->stok_produk -= $item['qty'];
                 $produk->save();
             }
 
-            // Jika semua lancar, Commit (Simpan Permanen)
             DB::commit();
 
             return response()->json([
@@ -98,9 +93,9 @@ class ProdukController extends Controller
             ], 500);
         }
     }
+
     public function tambahProduk(Request $request)
     {
-        // Validasi
         $request->validate([
             'nama_produk' => 'required|string|max:255',
             'harga_produk'       => 'required|numeric',
@@ -113,10 +108,9 @@ class ProdukController extends Controller
         if ($request->hasFile('gambar_produk')) {
             $gambar      = $request->file('gambar_produk');
             $gambarName  = time() . '_' . Str::random(8) . '.' . $gambar->getClientOriginalExtension();
-            $gambar->move(public_path('produk'), $gambarName);
+            $gambar->storeAs('produk', $gambarName, 'public');
         }
 
-        // Simpan ke database
         Produk::create([
             'nama_produk' => $request->nama_produk,
             'harga_produk'       => $request->harga_produk,
@@ -129,42 +123,34 @@ class ProdukController extends Controller
 
     public function editProduk(Request $request, $id)
     {
-        // 1. Validasi
         $request->validate([
             'nama_produk'   => 'required|string|max:255',
             'harga_produk'  => 'required|numeric|min:0',
-            'stok_produk'   => 'required|integer|min:0', // Stok dasar
-            'stok_masuk'    => 'nullable|integer|min:0', // Barang masuk (opsional)
+            'stok_produk'   => 'required|integer|min:0',
+            'stok_masuk'    => 'nullable|integer|min:0',
             'gambar_produk' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         try {
             $produk = Produk::where('id_produk', $id)->firstOrFail();
 
-            // 2. Update Data Biasa
             $produk->nama_produk = $request->nama_produk;
             $produk->harga_produk = $request->harga_produk;
 
-            // 3. LOGIC STOK (Stok Saat Ini + Barang Masuk)
-            // Ambil stok yang ada di input kiri (edit_stok_produk)
             $totalStok = $request->stok_produk;
-
-            // Jika user mengisi input kanan (Barang Masuk), tambahkan ke total
             if ($request->filled('stok_masuk')) {
                 $totalStok += $request->stok_masuk;
             }
-
             $produk->stok_produk = $totalStok;
 
-
-            // 4. Update Gambar (Sama seperti sebelumnya)
             if ($request->hasFile('gambar_produk')) {
-                if ($produk->gambar_produk && file_exists(public_path('produk/' . $produk->gambar_produk))) {
-                    unlink(public_path('produk/' . $produk->gambar_produk));
+                if ($produk->gambar_produk && Storage::disk('public')->exists('produk/' . $produk->gambar_produk)) {
+                    Storage::disk('public')->delete('produk/' . $produk->gambar_produk);
                 }
+
                 $file = $request->file('gambar_produk');
                 $filename = time() . '_' . $file->getClientOriginalName();
-                $file->move(public_path('produk'), $filename);
+                $file->storeAs('produk', $filename, 'public');
                 $produk->gambar_produk = $filename;
             }
 
@@ -179,19 +165,14 @@ class ProdukController extends Controller
     public function destroy($id)
     {
         try {
-            // 1. Cari Produk
-            // Pastikan 'id_produk' sesuai dengan nama kolom primary key di tabelmu
             $produk = Produk::where('id_produk', $id)->firstOrFail();
 
-            // 2. Hapus Gambar dari Folder (Jika ada)
-            if ($produk->gambar_produk && file_exists(public_path('produk/' . $produk->gambar_produk))) {
-                unlink(public_path('produk/' . $produk->gambar_produk));
+            if ($produk->gambar_produk && Storage::disk('public')->exists('produk/' . $produk->gambar_produk)) {
+                Storage::disk('public')->delete('produk/' . $produk->gambar_produk);
             }
 
-            // 3. Hapus Data dari Database
             $produk->delete();
 
-            // 4. Kembali dengan pesan sukses
             return redirect()->back()->with('success', 'Produk berhasil dihapus!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menghapus produk: ' . $e->getMessage());
@@ -203,7 +184,6 @@ class ProdukController extends Controller
         try {
             $produk = Produk::where('id_produk', $id)->firstOrFail();
 
-            // Logic Switch: Jika active jadi inactive, dan sebaliknya
             $newStatus = ($produk->status_produk == 'active') ? 'inactive' : 'active';
 
             $produk->status_produk = $newStatus;

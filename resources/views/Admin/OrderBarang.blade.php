@@ -56,7 +56,7 @@
 
                     <div class="relative h-32 bg-gray-100 rounded-xl mb-3 overflow-hidden">
                         @if($produk->gambar_produk)
-                        <img src="{{ asset('produk/' . $produk->gambar_produk) }}" class="w-full h-full object-cover" alt="{{ $produk->nama_produk }}">
+                        <img src="{{ asset('storage/produk/' . $produk->gambar_produk) }}" class="w-full h-full object-cover" alt="{{ $produk->nama_produk }}">
                         @else
                         <div class="absolute inset-0 flex items-center justify-center text-gray-400">
                             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
